@@ -41,9 +41,9 @@ public class EsgGenerator {
         this.qgmax = qgmax;
         this.xregge = Objects.requireNonNull(xregge);
         this.vregge = vregge;
-        this.zregnoge = zregnoge;
+        this.zregnoge = zregnoge;  // FIXME(mathbagu): could it be null?
         this.qgensh = qgensh;
-        this.xgenest = xgenest;
+        this.xgenest = xgenest;  // FIXME(mathbagu): could it be null?
     }
 
     public double getPgen() {
@@ -90,8 +90,9 @@ public class EsgGenerator {
         return xregge;
     }
 
+    // FIXME(mathbagu): why do we need this setter but not the others?
     public void setXregge(EsgRegulatingMode xregge) {
-        this.xregge = xregge;
+        this.xregge = xregge;  // FIXME(mathbagu): could it be null?
     }
 
     public Esg8charName getZnamge() {

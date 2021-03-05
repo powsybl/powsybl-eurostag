@@ -19,8 +19,9 @@ public class EsgArea {
         DC
     }
 
-    private final Type type;
     private final Esg2charName name;
+
+    private final Type type;
 
     public EsgArea(Esg2charName name, Type type) {
         this.name = Objects.requireNonNull(name);

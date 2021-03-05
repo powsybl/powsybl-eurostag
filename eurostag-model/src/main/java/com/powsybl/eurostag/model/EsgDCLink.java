@@ -28,9 +28,9 @@ public class EsgDCLink {
     public EsgDCLink(Esg8charName node1Name, Esg8charName node2Name, char xpp, float rldc, LinkStatus linkStatus) {
         this.node1Name = Objects.requireNonNull(node1Name);
         this.node2Name = Objects.requireNonNull(node2Name);
-        this.linkStatus = Objects.requireNonNull(linkStatus);
         this.xpp = xpp;
         this.rldc = rldc;
+        this.linkStatus = Objects.requireNonNull(linkStatus);
     }
 
     public Esg8charName getNode1Name() {

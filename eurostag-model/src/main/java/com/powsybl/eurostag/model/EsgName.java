@@ -9,6 +9,8 @@ package com.powsybl.eurostag.model;
 
 import com.google.common.base.Strings;
 
+import java.util.Objects;
+
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
@@ -17,8 +19,9 @@ public class EsgName {
     private final String name;
 
     public EsgName(String name, int maxLength) {
+        Objects.requireNonNull(name);
         if (name.length() > maxLength) {
-            throw new RuntimeException("Invalid id '" + name + "', expected to be less or equal to "
+            throw new EsgException("Invalid id '" + name + "', expected to be less or equal to "
                     + maxLength + " characters");
         }
         this.name = Strings.padEnd(name, maxLength, ' ');
@@ -26,7 +29,7 @@ public class EsgName {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof  EsgName) {
+        if (obj instanceof EsgName) {
             return ((EsgName) obj).name.equals(name);
         }
         return false;

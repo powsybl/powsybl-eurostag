@@ -7,6 +7,8 @@
  */
 package com.powsybl.eurostag.model;
 
+import java.util.Objects;
+
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
@@ -21,8 +23,8 @@ public class EsgLine {
     private final double rate; // line rated power [MVA].
 
     public EsgLine(EsgBranchName name, EsgBranchConnectionStatus status, double rb, double rxb, double gs, double bs, double rate) {
-        this.name = name;
-        this.status = status;
+        this.name = Objects.requireNonNull(name);
+        this.status = Objects.requireNonNull(status);
         this.rb = rb;
         this.rxb = rxb;
         this.gs = gs;

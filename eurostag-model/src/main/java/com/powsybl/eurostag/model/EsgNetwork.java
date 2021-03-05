@@ -42,17 +42,17 @@ public class EsgNetwork {
 
     private void checkBranchName(EsgBranchName name) {
         if (getNode(name.getNode1Name().toString()) == null) {
-            throw new RuntimeException("Line '" + name + "' reference an unknown connection node '" + name.getNode1Name() + "'");
+            throw new EsgException("Line '" + name + "' reference an unknown connection node '" + name.getNode1Name() + "'");
         }
         if (getNode(name.getNode2Name().toString()) == null) {
-            throw new RuntimeException("Line '" + name + "' reference an unknown connection node '" + name.getNode2Name() + "'");
+            throw new EsgException("Line '" + name + "' reference an unknown connection node '" + name.getNode2Name() + "'");
         }
     }
 
     public void checkConsistency() {
         // check there is at least one node and a slack bus
         if (nodes.size() < 1) {
-            throw new RuntimeException("Network must have at least one node");
+            throw new EsgException("Network must have at least one node");
         }
         int slackBusCount = 0;
         for (EsgNode node : nodes.values()) {
@@ -61,11 +61,11 @@ public class EsgNetwork {
             }
         }
         if (slackBusCount == 0) {
-            throw new RuntimeException("Network must have at least one slack bus");
+            throw new EsgException("Network must have at least one slack bus");
         }
         for (EsgNode node :  getNodes()) {
             if (getArea(node.getArea().toString()) == null) {
-                throw new RuntimeException("Node '" + node.getName() + "' reference an unknown area '" + node.getArea() + "'");
+                throw new EsgException("Node '" + node.getName() + "' reference an unknown area '" + node.getArea() + "'");
             }
         }
         for (EsgLine line : getLines()) {
@@ -80,35 +80,35 @@ public class EsgNetwork {
         for (EsgDetailedTwoWindingTransformer transformer : getDetailedTwoWindingTransformers()) {
             checkBranchName(transformer.getName());
             if (transformer.getZbusr() != null && getNode(transformer.getZbusr().toString()) == null) {
-                throw new RuntimeException("Transformer '" + transformer.getName() +  "' reference an unknown regulating node '"
+                throw new EsgException("Transformer '" + transformer.getName() +  "' reference an unknown regulating node '"
                         + transformer.getZbusr() + "'");
             }
         }
         for (EsgLoad load : getLoads()) {
             if (getNode(load.getZnodlo().toString()) == null) {
-                throw new RuntimeException("Load '" + load.getZnamlo() + "' reference an unknown connection node '"
+                throw new EsgException("Load '" + load.getZnamlo() + "' reference an unknown connection node '"
                         + load.getZnodlo() + "'");
             }
         }
         for (EsgGenerator generator : getGenerators()) {
             if (getNode(generator.getZnodge().toString()) == null) {
-                throw new RuntimeException("Generator '" + generator.getZnamge() + "' reference an unknown connection node '"
+                throw new EsgException("Generator '" + generator.getZnamge() + "' reference an unknown connection node '"
                         + generator.getZnodge() + "'");
             }
             if (getNode(generator.getZregnoge().toString()) == null) {
-                throw new RuntimeException("Generator '" + generator.getZnamge() + "' reference an unknown regulating node '"
+                throw new EsgException("Generator '" + generator.getZnamge() + "' reference an unknown regulating node '"
                         + generator.getZregnoge() + "'");
             }
         }
         for (EsgCapacitorOrReactorBank bank : getCapacitorOrReactorBanks()) {
             if (getNode(bank.getZnodba().toString()) == null) {
-                throw new RuntimeException("Capacitor or reactor bank '" + bank.getZnamba() + "' reference an unknown connection node '"
+                throw new EsgException("Capacitor or reactor bank '" + bank.getZnamba() + "' reference an unknown connection node '"
                         + bank.getZnodba() + "'");
             }
         }
         for (EsgStaticVarCompensator svc : getStaticVarCompensators()) {
             if (getNode(svc.getZnodsvc().toString()) == null) {
-                throw new RuntimeException("Static VAR compensator '" + svc.getZnamsvc() + "' reference an unknown connection node '"
+                throw new EsgException("Static VAR compensator '" + svc.getZnamsvc() + "' reference an unknown connection node '"
                         + svc.getZnodsvc() + "'");
             }
         }
@@ -160,7 +160,7 @@ public class EsgNetwork {
                             g.setVregge(vregge);
                         }
                     } else {
-                        throw new RuntimeException(connectedGenerators.size() + " generators ("
+                        throw new EsgException(connectedGenerators.size() + " generators ("
                                 + connectedGenerators.stream().map(EsgGenerator::getZnamge).collect(Collectors.toList())
                                 + ") are connected to a same node (" + nodeName + ") and try to impose a different target voltage: "
                                 + targetVoltageSet);

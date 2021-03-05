@@ -81,7 +81,7 @@ public class EsgDetailedTwoWindingTransformer {
                                             double rate, double pcu, double pfer, double esat, int ktpnom, int ktap8, Esg8charName zbusr,
                                             double voltr, double pregmin, double pregmax, RegulatingMode xregtr) {
         this.name = Objects.requireNonNull(name);
-        this.status = status;
+        this.status = Objects.requireNonNull(status);
         this.cmagn = cmagn;
         this.rate = rate;
         this.pcu = pcu;
@@ -89,7 +89,7 @@ public class EsgDetailedTwoWindingTransformer {
         this.esat = esat;
         this.ktpnom = ktpnom;
         this.ktap8 = ktap8;
-        this.zbusr = zbusr;
+        this.zbusr = zbusr;  // FIXME(mathbagu): could it be null?
         this.voltr = voltr;
         this.pregmin = pregmin;
         this.pregmax = pregmax;

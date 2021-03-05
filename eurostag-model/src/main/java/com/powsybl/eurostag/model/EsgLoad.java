@@ -15,9 +15,8 @@ import java.util.Objects;
 public class EsgLoad {
 
     private final Esg8charName znamlo; // load name
-    private final EsgConnectionStatus iloadst; // Status
-                                                        //    ‘ ‘    : connected
-                                                        //    ‘-’    : not connected
+    private final EsgConnectionStatus iloadst; // Status (' ' -> connected, '-' -> not connected)
+
     private final Esg8charName znodlo; // connection node name
     private final double pldsti; // active load [MW]
     private final double pldstz; // active load [MW]
