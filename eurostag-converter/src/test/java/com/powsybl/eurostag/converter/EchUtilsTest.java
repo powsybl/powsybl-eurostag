@@ -7,10 +7,6 @@
 package com.powsybl.eurostag.converter;
 
 import com.google.common.collect.Lists;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
-import com.powsybl.commons.config.InMemoryPlatformConfig;
-import com.powsybl.commons.config.MapModuleConfig;
 import com.powsybl.iidm.network.HvdcLine;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -19,7 +15,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
 
 import static org.junit.Assert.*;
 
@@ -38,12 +33,7 @@ public class EchUtilsTest {
     }
 
     private EurostagEchExportConfig getConfig(boolean noSwitch, boolean exportMainCCOnly) {
-        FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix());
-        InMemoryPlatformConfig platformConfig = new InMemoryPlatformConfig(fileSystem);
-        MapModuleConfig moduleConfig = platformConfig.createModuleConfig("eurostag-ech-export");
-        moduleConfig.setStringProperty("noSwitch", Boolean.toString(noSwitch));
-        moduleConfig.setStringProperty("exportMainCCOnly", Boolean.toString(exportMainCCOnly));
-        return EurostagEchExportConfig.load(platformConfig);
+        return new EurostagEchExportConfig(exportMainCCOnly, noSwitch);
     }
 
     private EurostagEchExportConfig getConfig(boolean noSwitch) {

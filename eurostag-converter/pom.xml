@@ -44,11 +44,11 @@
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-commons</artifactId>
         </dependency>
+        -->
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-api</artifactId>
         </dependency>
-        -->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>powsybl-eurostag-model</artifactId>
@@ -61,7 +61,6 @@
             <artifactId>powsybl-config-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-impl</artifactId>
@@ -77,6 +76,15 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
