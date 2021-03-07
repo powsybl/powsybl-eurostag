@@ -109,10 +109,12 @@ public class EurostagEchExportConfig {
 
     public static EurostagEchExportConfig load(PlatformConfig platformConfig) {
         // FIXME(mathbagu): should not depend on load-flow properties
-
         // specificCompatibility parameter = true forces  svcAsFixedInjectionInLF to true
-        ModuleConfig loadFlowModuleConfig = platformConfig.getModuleConfig("load-flow-default-parameters");
-        boolean specificCompatibility = (loadFlowModuleConfig != null) ? loadFlowModuleConfig.getBooleanProperty("specificCompatibility", DEFAULT_SPECIFIC_COMPATIBILITY) : DEFAULT_SPECIFIC_COMPATIBILITY;
+        boolean specificCompatibility = DEFAULT_SPECIFIC_COMPATIBILITY;
+        if (platformConfig.moduleExists("load-flow-default-parameters")) {
+            ModuleConfig loadFlowModuleConfig = platformConfig.getModuleConfig("load-flow-default-parameters");
+            specificCompatibility = loadFlowModuleConfig.getBooleanProperty("specificCompatibility", DEFAULT_SPECIFIC_COMPATIBILITY);
+        }
 
         if (platformConfig.moduleExists(EUROSTAG_ECH_EXPORT_CONFIG)) {
             ModuleConfig config = platformConfig.getModuleConfig(EUROSTAG_ECH_EXPORT_CONFIG);

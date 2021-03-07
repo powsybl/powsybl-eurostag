@@ -102,7 +102,7 @@ public class EurostagEchExport implements EurostagEchExporter {
 
         Bus sb = EchUtil.selectSlackbus(network, config);
         if (sb == null) {
-            throw new RuntimeException("Slack bus not found");
+            throw new EsgException("Slack bus not found");
         }
         LOGGER.debug("Slack bus: {} ({})", sb, sb.getVoltageLevel().getId());
         for (Bus b : Identifiables.sort(EchUtil.getBuses(network, config))) {
@@ -805,8 +805,9 @@ public class EurostagEchExport implements EurostagEchExporter {
 
     protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation<?> convStation, double activeSetPoint) {
         double cableLossesEnd = EchUtil.isPMode(convStation, hvdcLine) ? 0.0 : 1.0;
-        double ploss = Math.abs(activeSetPoint * convStation.getLossFactor() / 100.0) + cableLossesEnd * (hvdcLine.getR() - 0.25) * Math.pow(activeSetPoint / hvdcLine.getNominalV(), 2); //Eurostag model requires a fixed resistance of 1 ohm at 640 kV quivalent to 0.25 ohm at 320 kV
-        return ploss;
+        //Eurostag model requires a fixed resistance of 1 ohm at 640 kV quivalent to 0.25 ohm at 320 kV
+        // FIXME(mathbagu): lossFactor convention changed in IIDM, check if this formula is correct
+        return Math.abs(activeSetPoint * convStation.getLossFactor() / 100.0) + cableLossesEnd * (hvdcLine.getR() - 0.25) * Math.pow(activeSetPoint / hvdcLine.getNominalV(), 2);
     }
 
     protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation<?> convStation) {

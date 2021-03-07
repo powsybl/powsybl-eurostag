@@ -66,11 +66,6 @@
         <powsyblcore.version>4.0.1</powsyblcore.version>
     </properties>
 
-
-    <build>
-
-    </build>
-
     <dependencyManagement>
         <dependencies>
             <!-- Compile dependencies -->
