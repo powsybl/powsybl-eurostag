@@ -22,8 +22,8 @@ public final class BranchParallelIndexes {
     private final Map<String, Character> parallelIndexes;
 
     public static BranchParallelIndexes build(Network network, EurostagEchExportConfig config, EurostagFakeNodes fakeNodes) {
-        Multimap<String, Identifiable> map = HashMultimap.create();
-        for (Branch branch : Iterables.concat(network.getLines(), network.getTwoWindingsTransformers())) {
+        Multimap<String, Identifiable<?>> map = HashMultimap.create();
+        for (Branch<?> branch : Iterables.concat(network.getLines(), network.getTwoWindingsTransformers())) {
             ConnectionBus bus1 = ConnectionBus.fromTerminal(branch.getTerminal1(), config, fakeNodes);
             ConnectionBus bus2 = ConnectionBus.fromTerminal(branch.getTerminal2(), config, fakeNodes);
             if (bus1.getId().compareTo(bus2.getId()) < 0) {
@@ -44,12 +44,12 @@ public final class BranchParallelIndexes {
             }
         }
         Map<String, Character> parallelIndexes = new HashMap<>();
-        for (Map.Entry<String, Collection<Identifiable>> entry : map.asMap().entrySet()) {
-            List<Identifiable> eqs = new ArrayList<>(entry.getValue());
-            Collections.sort(eqs, (o1, o2) -> o1.getId().compareTo(o2.getId()));
+        for (Map.Entry<String, Collection<Identifiable<?>>> entry : map.asMap().entrySet()) {
+            List<Identifiable<?>> eqs = new ArrayList<>(entry.getValue());
+            eqs.sort(Comparator.comparing(Identifiable::getId));
             if (eqs.size() >= 2) {
                 char index = '0';
-                for (Identifiable l : eqs) {
+                for (Identifiable<?> l : eqs) {
                     index = incParallelIndex(index);
                     parallelIndexes.put(l.getId(), index);
                 }

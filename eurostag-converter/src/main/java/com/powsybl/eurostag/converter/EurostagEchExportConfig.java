@@ -31,19 +31,19 @@ public class EurostagEchExportConfig {
     private static final boolean DEFAULT_SPECIFIC_COMPATIBILITY = false;
     private static final boolean DEFAULT_EXPORT_MAIN_CC_ONLY = false;
 
-    private boolean noGeneratorMinMaxQ;
+    private final boolean noGeneratorMinMaxQ;
 
-    private boolean noSwitch;
+    private final boolean noSwitch;
 
-    private boolean svcAsFixedInjectionInLF;
+    private final boolean svcAsFixedInjectionInLF;
 
-    private boolean specificCompatibility;
+    private final boolean specificCompatibility;
 
     private final String forbiddenCharacters;
 
     private final Character forbiddenCharactersReplacement;
 
-    private boolean exportMainCCOnly;
+    private final boolean exportMainCCOnly;
 
     public EurostagEchExportConfig() {
         this(false, false, DEFAULT_FORBIDDEN_CHARACTERS, DEFAULT_FORBIDDEN_CHARACTERS_REPLACEMENT, DEFAULT_SVC_AS_FIXED_INJECTION_IN_LF, DEFAULT_SPECIFIC_COMPATIBILITY, DEFAULT_EXPORT_MAIN_CC_ONLY);
@@ -108,6 +108,7 @@ public class EurostagEchExportConfig {
     }
 
     public static EurostagEchExportConfig load(PlatformConfig platformConfig) {
+        // FIXME(mathbagu): should not depend on load-flow properties
 
         // specificCompatibility parameter = true forces  svcAsFixedInjectionInLF to true
         ModuleConfig loadFlowModuleConfig = platformConfig.getModuleConfig("load-flow-default-parameters");

@@ -10,13 +10,14 @@ package com.powsybl.eurostag.converter;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.powsybl.eurostag.model.EsgException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -34,16 +35,17 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DicoEurostagNamingStrategy.class);
 
-    private BiMap<String, String> dicoMap = HashBiMap.create();
+    private final BiMap<String, String> dicoMap = HashBiMap.create();
 
     private final CutEurostagNamingStrategy defaultStrategy;
 
-    class DicoCsvReader {
+    private static class DicoCsvReader {
 
         private static final String SEPARATOR = ";";
 
         private final Reader source;
 
+        // FIXME(mathbagu): pass the source to the read method instead?
         DicoCsvReader(Reader source) {
             this.source = source;
         }
@@ -62,18 +64,18 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
         if ((dicoFile == null) || (!Files.isRegularFile(dicoFile))) {
             String errMsg = "csv file does not exist or is not valid: " + dicoFile;
             LOGGER.error(errMsg);
-            throw new RuntimeException(errMsg);
+            throw new EsgException(errMsg);
         } else {
             LOGGER.debug("reading iidm-esgid mapping from csv file " + dicoFile);
             // Note: csv files's first line is skipped, it is expected to be a header line
             List<List<String>> dicoMappings;
             try {
-                Reader reader = Files.newBufferedReader(dicoFile, Charset.forName("UTF-8"));
+                Reader reader = Files.newBufferedReader(dicoFile, StandardCharsets.UTF_8);
                 DicoCsvReader dicoReader = new DicoCsvReader(reader);
                 dicoMappings = dicoReader.readDicoMappings();
-            } catch (Exception e) {
+            } catch (Exception e) {  // FIXME(mathbagu): which exception is thrown?
                 LOGGER.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                throw new EsgException(e);
             }
 
             int count = 1;
@@ -88,16 +90,16 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
                 if ("".equals(iidmId) || "".equals(esgId)) {
                     String errMsg = "either iidmId or esgId or both are empty strings. Line " + count + " in " + dicoFile.toString();
                     LOGGER.error(errMsg);
-                    throw new RuntimeException(errMsg);
+                    throw new EsgException(errMsg);
                 }
                 if (dicoMap.containsKey(esgId)) {
                     String errMsg = "esgId: " + esgId + " already mapped.";
                     LOGGER.error(errMsg);
-                    throw new RuntimeException(errMsg);
+                    throw new EsgException(errMsg);
                 }
                 dicoMap.put(iidmId, esgId);
             }
-            defaultStrategy = new CutEurostagNamingStrategy(new HashSet(dicoMap.values()));
+            defaultStrategy = new CutEurostagNamingStrategy(new HashSet<>(dicoMap.values()));
         }
     }
 
@@ -105,7 +107,7 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
     public void fillDictionary(EurostagDictionary dictionary, NameType nameType, Set<String> iidmIds) {
         //partition the iidmIds set in two: tiidms with a dico mapping and iidms without a dico mapping
         Map<Boolean, List<String>> dicoPartioned =
-                iidmIds.stream().collect(Collectors.partitioningBy(iidmId -> dicoMap.containsKey(iidmId)));
+                iidmIds.stream().collect(Collectors.partitioningBy(dicoMap::containsKey));
 
         //first process the entry that are in the dico mapping
         dicoPartioned.get(true).forEach(iidmId -> {
@@ -125,7 +127,7 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
             } else {
                 LOGGER.warn(notFoundMsgTemplate, notInMapping);
             }
-            defaultStrategy.fillDictionary(dictionary, nameType, new HashSet(notInMapping));
+            defaultStrategy.fillDictionary(dictionary, nameType, new HashSet<>(notInMapping));
         }
     }
 }

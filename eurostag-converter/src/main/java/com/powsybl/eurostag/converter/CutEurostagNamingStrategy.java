@@ -8,6 +8,7 @@
 package com.powsybl.eurostag.converter;
 
 import com.google.common.base.Strings;
+import com.powsybl.eurostag.model.EsgException;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -16,24 +17,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
- *
  *  Creates Eurostag identifiers by replacing forbidden characters from IIDM identifers,
  *  and cutting down the number of characters to comply with Eurostag naming rules.
  *
  *  A set of forbidden IDs may be defined to ensure there is no conflict with previously defined IDs.
+ *
+ *  @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class CutEurostagNamingStrategy implements EurostagNamingStrategy {
 
-    private Set<String> forbiddenEsgIds;
+    private final Set<String> forbiddenEsgIds;
 
     public CutEurostagNamingStrategy() {
         forbiddenEsgIds = Collections.emptySet();
     }
 
     public CutEurostagNamingStrategy(final Set<String> forbiddenEsgIds) {
-        Objects.requireNonNull(forbiddenEsgIds);
-        this.forbiddenEsgIds = forbiddenEsgIds;
+        this.forbiddenEsgIds = Objects.requireNonNull(forbiddenEsgIds);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class CutEurostagNamingStrategy implements EurostagNamingStrategy {
         while (dictionary.esgIdExists(esgId) || forbiddenEsgIds.contains(esgId)) {
             String counterStr = Integer.toString(counter++);
             if (counterStr.length() > nameType.getLength()) {
-                throw new RuntimeException("Renaming fatal error " + iidmId + " -> " + esgId);
+                throw new EsgException("Renaming fatal error " + iidmId + " -> " + esgId);
             }
             esgId = esgId.substring(0, nameType.getLength() - counterStr.length()) + counterStr;
         }

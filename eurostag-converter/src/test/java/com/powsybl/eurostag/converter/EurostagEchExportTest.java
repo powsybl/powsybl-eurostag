@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -65,8 +66,12 @@ public class EurostagEchExportTest {
     @Test
     public void testHVDC() throws IOException {
         Network network = HvdcTestNetwork.createVsc();
-        network.getVoltageLevelStream().findFirst().orElse(null)
-                .newGenerator().setId("G1")
+
+        VoltageLevel vl = network.getVoltageLevel("VL1");
+        assertNotNull(vl);
+
+        vl.newGenerator()
+                .setId("G1")
                 .setConnectableBus("B1")
                 .setBus("B1")
                 .setVoltageRegulatorOn(true)

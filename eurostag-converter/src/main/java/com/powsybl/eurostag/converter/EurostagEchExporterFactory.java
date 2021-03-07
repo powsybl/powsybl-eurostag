@@ -13,5 +13,7 @@ import com.powsybl.iidm.network.Network;
  * @author Christian Biasuzzi <christian.biasuzzi@techrain.it>
  */
 public interface EurostagEchExporterFactory {
+
     EurostagEchExporter createEchExporter(Network network, EurostagEchExportConfig exportConfig, BranchParallelIndexes parallelIndexes, EurostagDictionary dictionary, EurostagFakeNodes fakeNodes);
+
 }

@@ -10,10 +10,7 @@ package com.powsybl.eurostag.converter;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.util.ConnectedComponents;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
 /**
@@ -162,10 +159,10 @@ public final class EchUtil {
 
     private static Bus selectSlackbusCriteria1(Network network, EurostagEchExportConfig config, Set<String> busesToAvoid) {
         return StreamSupport.stream(EchUtil.getBuses(network, config).spliterator(), false)
-                .sorted((b1, b2) -> b1.getId().compareTo(b2.getId()))
+                .sorted(Comparator.comparing(Identifiable::getId))
                 .filter(b -> !busesToAvoid.contains(b.getId())
                         && b.getConnectedComponent() != null && b.getConnectedComponent().getNum() == ComponentConstants.MAIN_NUM)
-                 .map(b -> decorate(b))
+                 .map(EchUtil::decorate)
                  .filter(db -> db.regulatingGenerator > 0 && db.maxP > 100) // only keep bus with a regulating generator and a pmax > 100 MW
                  .sorted((db1, db2) -> Float.compare((db1.maxP - db1.minP) / 2 - db1.targetP, (db2.maxP - db2.minP) / 2 - db2.targetP)) // select first bus with a high margin
                  .limit(1)
@@ -178,11 +175,11 @@ public final class EchUtil {
         return ConnectedComponents.getCcNum(bus) == ComponentConstants.MAIN_NUM;
     }
 
-    public static boolean isInMainCc(Injection injection, boolean noswitch) {
+    public static boolean isInMainCc(Injection<?> injection, boolean noswitch) {
         return ConnectedComponents.getCcNum(EchUtil.getBus(injection.getTerminal(), noswitch)) == ComponentConstants.MAIN_NUM;
     }
 
-    public static boolean isInMainCc(Branch branch, boolean noswitch) {
+    public static boolean isInMainCc(Branch<?> branch, boolean noswitch) {
         return (ConnectedComponents.getCcNum(EchUtil.getBus(branch.getTerminal1(), noswitch)) == ComponentConstants.MAIN_NUM)
                 && (ConnectedComponents.getCcNum(EchUtil.getBus(branch.getTerminal2(), noswitch)) == ComponentConstants.MAIN_NUM);
     }
@@ -197,11 +194,11 @@ public final class EchUtil {
         return line.getNominalV() * 2.0;
     }
 
-    public static boolean isPMode(HvdcConverterStation vscConv, HvdcLine hvdcLine) {
+    public static boolean isPMode(HvdcConverterStation<?> vscConv, HvdcLine hvdcLine) {
         Objects.requireNonNull(vscConv);
         Objects.requireNonNull(hvdcLine);
-        HvdcConverterStation side1Conv = hvdcLine.getConverterStation1();
-        HvdcConverterStation side2Conv = hvdcLine.getConverterStation2();
+        HvdcConverterStation<?> side1Conv = hvdcLine.getConverterStation1();
+        HvdcConverterStation<?> side2Conv = hvdcLine.getConverterStation2();
         if ((hvdcLine.getConvertersMode().equals(HvdcLine.ConvertersMode.SIDE_1_RECTIFIER_SIDE_2_INVERTER))
                 && (vscConv.getId().equals(side1Conv.getId()))) {
             return true;
@@ -213,7 +210,7 @@ public final class EchUtil {
         return false;
     }
 
-    public static HvdcConverterStation getPStation(HvdcLine hvdcLine) {
+    public static HvdcConverterStation<?> getPStation(HvdcLine hvdcLine) {
         Objects.requireNonNull(hvdcLine);
         if (hvdcLine.getConvertersMode().equals(HvdcLine.ConvertersMode.SIDE_1_RECTIFIER_SIDE_2_INVERTER)) {
             return hvdcLine.getConverterStation1();
@@ -224,7 +221,7 @@ public final class EchUtil {
         return null;
     }
 
-    public static HvdcConverterStation getVStation(HvdcLine hvdcLine) {
+    public static HvdcConverterStation<?> getVStation(HvdcLine hvdcLine) {
         Objects.requireNonNull(hvdcLine);
         if (hvdcLine.getConvertersMode().equals(HvdcLine.ConvertersMode.SIDE_1_RECTIFIER_SIDE_2_INVERTER)) {
             return hvdcLine.getConverterStation2();

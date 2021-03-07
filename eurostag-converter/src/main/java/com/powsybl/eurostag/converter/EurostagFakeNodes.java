@@ -10,12 +10,11 @@ import com.google.common.base.Strings;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.util.concurrent.AtomicLongMap;
+import com.powsybl.eurostag.model.EsgException;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VoltageLevel;
 import com.powsybl.iidm.network.util.Identifiables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,26 +26,23 @@ import java.util.stream.Stream;
  */
 public final class EurostagFakeNodes {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EurostagFakeNodes.class);
-
-    private static int FAKENODELENGTH = 6;
-
-    private static String PREFIX = "FK";
+    private static final int FAKE_NODE_LENGTH = 6;
+    private static final String PREFIX = "FK";
 
     private final BiMap<String, String> fakeNodesMap;
-    final AtomicLongMap<String> countUsesMap;
+    private final AtomicLongMap<String> countUsesMap;
     private final Network network;
 
     private static String newEsgId(BiMap<String, String> fakeNodesMap, String iidmId) {
-        String esgId = PREFIX + (iidmId.length() > FAKENODELENGTH ? iidmId.substring(0, FAKENODELENGTH)
-                : Strings.padEnd(iidmId, FAKENODELENGTH, ' '));
+        String esgId = PREFIX + (iidmId.length() > FAKE_NODE_LENGTH ? iidmId.substring(0, FAKE_NODE_LENGTH)
+                : Strings.padEnd(iidmId, FAKE_NODE_LENGTH, ' '));
         int counter = 0;
         while (fakeNodesMap.inverse().containsKey(esgId)) {
             String counterStr = Integer.toString(counter++);
-            if (counterStr.length() > FAKENODELENGTH) {
-                throw new RuntimeException("Renaming fatal error " + iidmId + " -> " + esgId);
+            if (counterStr.length() > FAKE_NODE_LENGTH) {
+                throw new EsgException("Renaming fatal error " + iidmId + " -> " + esgId);
             }
-            esgId = PREFIX + esgId.substring(PREFIX.length(), PREFIX.length() + FAKENODELENGTH - counterStr.length()) + counterStr;
+            esgId = PREFIX + esgId.substring(PREFIX.length(), PREFIX.length() + FAKE_NODE_LENGTH - counterStr.length()) + counterStr;
         }
         return esgId;
     }

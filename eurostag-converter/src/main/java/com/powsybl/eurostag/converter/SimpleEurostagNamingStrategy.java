@@ -15,11 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SimpleEurostagNamingStrategy implements EurostagNamingStrategy {
 
-    private static String createIndexedName(char code, long index, int maxSize) {
-        int number = maxSize - 1;
-        return String.format("%s%0" + number + "d", code, index);
-    }
-
     private final Map<NameType, AtomicLong> index = new EnumMap<>(NameType.class);
 
     public SimpleEurostagNamingStrategy() {
@@ -44,7 +39,7 @@ public class SimpleEurostagNamingStrategy implements EurostagNamingStrategy {
                 code = 'B';
                 break;
             default:
-                throw new AssertionError();
+                throw new AssertionError("Unexpected NameType: " + nameType);
 
         }
         return createIndexedName(code, index.get(nameType).getAndIncrement(), nameType.getLength());
@@ -63,4 +58,8 @@ public class SimpleEurostagNamingStrategy implements EurostagNamingStrategy {
         }
     }
 
+    private static String createIndexedName(char code, long index, int maxSize) {
+        int number = maxSize - 1;
+        return String.format("%s%0" + number + "d", code, index);
+    }
 }

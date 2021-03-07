@@ -15,6 +15,10 @@ public class EsgException extends RuntimeException {
         super(message);
     }
 
+    public EsgException(Throwable cause) {
+        super(cause);
+    }
+
     public EsgException(String message, Throwable cause) {
         super(message, cause);
     }

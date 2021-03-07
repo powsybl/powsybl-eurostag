@@ -14,10 +14,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Christian Biasuzzi <christian.biasuzzi@techrain.it>
@@ -32,6 +32,7 @@ public class CheckEurostagEchExporterConfigTest {
         fileSystem = Jimfs.newFileSystem(Configuration.unix());
         platformConfig = new InMemoryPlatformConfig(fileSystem);
         MapModuleConfig defaultConfig = platformConfig.createModuleConfig("componentDefaultConfig");
+        // FIXME(mathbagu): unused?!
     }
 
     @After
@@ -52,33 +53,33 @@ public class CheckEurostagEchExporterConfigTest {
     }
 
     @Test
-    public void testConfig() throws IOException {
+    public void testConfig() {
         EurostagEchExportConfig config = new EurostagEchExportConfig();
-        assertEquals(false, config.isSvcAsFixedInjectionInLF());
+        assertFalse(config.isSvcAsFixedInjectionInLF());
     }
 
     @Test
-    public void testConfigFromFile() throws IOException {
+    public void testConfigFromFile() {
         EurostagEchExportConfig config = getConfigFromFile(fileSystem, false, false);
-        assertEquals(false, config.isSvcAsFixedInjectionInLF());
+        assertFalse(config.isSvcAsFixedInjectionInLF());
     }
 
     @Test
-    public void testConfigSpecificCompatibility() throws IOException {
+    public void testConfigSpecificCompatibility() {
         EurostagEchExportConfig config = getConfigFromFile(fileSystem, true, false);
-        assertEquals(true, config.isSvcAsFixedInjectionInLF());
+        assertTrue(config.isSvcAsFixedInjectionInLF());
     }
 
     @Test
-    public void testConfigExportNoMainCC() throws IOException {
+    public void testConfigExportNoMainCC() {
         EurostagEchExportConfig config = getConfigFromFile(fileSystem, true, false);
-        assertEquals(false, config.isExportMainCCOnly());
+        assertFalse(config.isExportMainCCOnly());
     }
 
     @Test
-    public void testConfigExportMainCC() throws IOException {
+    public void testConfigExportMainCC() {
         EurostagEchExportConfig config = getConfigFromFile(fileSystem, true, true);
-        assertEquals(true, config.isExportMainCCOnly());
+        assertTrue(config.isExportMainCCOnly());
     }
 
 }

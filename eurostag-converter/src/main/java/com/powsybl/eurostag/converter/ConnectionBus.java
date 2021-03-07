@@ -10,6 +10,8 @@ package com.powsybl.eurostag.converter;
 import com.powsybl.iidm.network.Bus;
 import com.powsybl.iidm.network.Terminal;
 
+import java.util.Objects;
+
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
@@ -55,7 +57,7 @@ public class ConnectionBus {
 
     public ConnectionBus(boolean connected, String id) {
         this.connected = connected;
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     public boolean isConnected() {

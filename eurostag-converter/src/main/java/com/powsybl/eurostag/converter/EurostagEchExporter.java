@@ -17,6 +17,7 @@ import java.nio.file.Path;
  * @author Christian Biasuzzi <christian.biasuzzi@techrain.it>
  */
 public interface EurostagEchExporter {
+
     EsgNetwork createNetwork(EsgGeneralParameters parameters);
 
     void write(Path file, EsgGeneralParameters parameters, EsgSpecialParameters specialParameters) throws IOException;

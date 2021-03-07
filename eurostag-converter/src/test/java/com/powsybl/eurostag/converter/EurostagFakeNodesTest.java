@@ -10,9 +10,6 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.stream.Collectors;
-
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -21,10 +18,10 @@ import static org.junit.Assert.assertTrue;
 public class EurostagFakeNodesTest {
 
     @Test
-    public void test() throws IOException {
+    public void test() {
         Network network = EurostagTutorialExample1Factory.create();
         EurostagFakeNodes fakeNodes = EurostagFakeNodes.build(network, new EurostagEchExportConfig());
-        assertTrue(fakeNodes.esgIdsAsStream().collect(Collectors.toList()).size() >= network.getVoltageLevelCount());
+        assertTrue(fakeNodes.esgIdsAsStream().count() >= network.getVoltageLevelCount());
     }
 
 }

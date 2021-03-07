@@ -33,12 +33,12 @@ public class EurostagEchExport implements EurostagEchExporter {
     /**
      * epsilon value for conductance
      */
-    public static final float G_EPSILON = 0.00001f;
+    static final float G_EPSILON = 0.00001f;
 
     /**
      * epsilon value for susceptance
      */
-    public static final float B_EPSILON = 0.000001f;
+    static final float B_EPSILON = 0.000001f;
 
     private static final String XNODE_V_PROPERTY = "xnode_v";
     private static final String XNODE_ANGLE_PROPERTY = "xnode_angle";
@@ -96,7 +96,7 @@ public class EurostagEchExport implements EurostagEchExporter {
     private void createNodes(EsgNetwork esgNetwork) {
         fakeNodes.referencedEsgIdsAsStream().forEach(esgId -> {
             VoltageLevel vlevel = fakeNodes.getVoltageLevelByEsgId(esgId);
-            double nominalV = (vlevel != null) ? vlevel.getNominalV() : 380.0;
+            double nominalV = (vlevel != null) ? vlevel.getNominalV() : 380.0; // FIXME(mathbagu)
             esgNetwork.addNode(createNode(esgId, EchUtil.FAKE_AREA, nominalV, nominalV, 0f, false));
         });
 
@@ -119,9 +119,8 @@ public class EurostagEchExport implements EurostagEchExporter {
                 LOGGER.warn("not in main component, skipping DanglingLine: {}", dl.getId());
                 continue;
             }
-            Properties properties = dl.getProperties();
-            String strV = properties.getProperty(XNODE_V_PROPERTY);
-            String strAngle = properties.getProperty(XNODE_ANGLE_PROPERTY);
+            String strV = dl.getProperty(XNODE_V_PROPERTY);
+            String strAngle = dl.getProperty(XNODE_ANGLE_PROPERTY);
             float v = strV != null ? Float.parseFloat(strV) : Float.NaN;
             float angle = strAngle != null ? Float.parseFloat(strAngle) : Float.NaN;
             esgNetwork.addNode(createNode(EchUtil.getBusId(dl), dl.getTerminal().getVoltageLevel(), v, angle, false));
@@ -679,7 +678,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             double bmin = (!config.isSvcAsFixedInjectionInLF()) ? svc.getBmin() * factor : -9999999; // [Mvar]
             double binit; // [Mvar]
             if (!config.isSvcAsFixedInjectionInLF()) {
-                binit = svc.getReactivePowerSetPoint();
+                binit = svc.getReactivePowerSetpoint();
             } else {
                 binit = svc.getTerminal().getQ();
                 Bus svcBus = EchUtil.getBus(svc.getTerminal(), config);
@@ -689,7 +688,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             }
             double bmax = (!config.isSvcAsFixedInjectionInLF()) ? svc.getBmax() * factor : 9999999; // [Mvar]
             EsgRegulatingMode xregsvc = ((svc.getRegulationMode() == StaticVarCompensator.RegulationMode.VOLTAGE) && (!config.isSvcAsFixedInjectionInLF())) ? EsgRegulatingMode.REGULATING : EsgRegulatingMode.NOT_REGULATING;
-            double vregsvc = svc.getVoltageSetPoint();
+            double vregsvc = svc.getVoltageSetpoint();
             double qsvsch = 1.0;
             esgNetwork.addStaticVarCompensator(
                     new EsgStaticVarCompensator(znamsvc, xsvcst, znodsvc, bmin, binit, bmax, xregsvc, vregsvc, qsvsch));
@@ -804,18 +803,18 @@ public class EurostagEchExport implements EurostagEchExporter {
                 mva);
     }
 
-    protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation convStation, double activeSetPoint) {
+    protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation<?> convStation, double activeSetPoint) {
         double cableLossesEnd = EchUtil.isPMode(convStation, hvdcLine) ? 0.0 : 1.0;
         double ploss = Math.abs(activeSetPoint * convStation.getLossFactor() / 100.0) + cableLossesEnd * (hvdcLine.getR() - 0.25) * Math.pow(activeSetPoint / hvdcLine.getNominalV(), 2); //Eurostag model requires a fixed resistance of 1 ohm at 640 kV quivalent to 0.25 ohm at 320 kV
         return ploss;
     }
 
-    protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation convStation) {
+    protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation<?> convStation) {
         double activeSetPoint = zeroIfNanOrValue(hvdcLine.getActivePowerSetpoint());
         return computeLosses(hvdcLine, convStation, activeSetPoint);
     }
 
-    private EsgLoad createConverterStationAdditionalLoad(HvdcLine hvdcLine, HvdcConverterStation convStation) {
+    private EsgLoad createConverterStationAdditionalLoad(HvdcLine hvdcLine, HvdcConverterStation<?> convStation) {
         double ploss = computeLosses(hvdcLine, convStation);
         ConnectionBus rectConvBus = ConnectionBus.fromTerminal(convStation.getTerminal(), config, fakeNodes);
         String fictionalLoadId = "fict_" + convStation.getId();
@@ -831,8 +830,8 @@ public class EurostagEchExport implements EurostagEchExporter {
                 LOGGER.warn("skipped HVDC line {}: at least one converter station is not in main component", hvdcLine.getId());
                 continue;
             }
-            HvdcConverterStation convStation1 = hvdcLine.getConverterStation1();
-            HvdcConverterStation convStation2 = hvdcLine.getConverterStation2();
+            HvdcConverterStation<?> convStation1 = hvdcLine.getConverterStation1();
+            HvdcConverterStation<?> convStation2 = hvdcLine.getConverterStation2();
 
             //create two dc nodes, one for each conv. station
             Esg8charName hvdcNodeName1 = new Esg8charName(addToDictionary("DC_" + convStation1.getId(), dictionary, EurostagNamingStrategy.NameType.NODE));

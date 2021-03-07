@@ -16,7 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,7 +87,7 @@ public class EurostagNamingStrategyTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         List<String> genNames = Arrays.asList("GEN1;", "GEN2;", "GEN3;", "GENOK[", "GE,NA^C;EN", "GE,NA^C;EN2", "GEN1_", "GEN^^^^^", "GEN_____", "GEN____0", "GEN(((((");
         network = createMockNetwork(genNames);
     }
@@ -110,14 +109,14 @@ public class EurostagNamingStrategyTest {
     }
 
     @Test
-    public void testForbiddenChars() throws IOException {
+    public void testForbiddenChars() {
         EurostagEchExportConfig config = getConfig(";^", "_");
         EurostagDictionary ed = EurostagDictionary.create(network, null, config, EurostagFakeNodes.build(network, config));
         ed.toMap().forEach((iidmId, esgId) -> assertTrue(isValid(config, esgId)));
     }
 
     @Test
-    public void testForbiddenCharsInvalidConfig() throws IOException {
+    public void testForbiddenCharsInvalidConfig() {
         try {
             EurostagEchExportConfig config = getConfig(";^", ";");
             EurostagDictionary ed = EurostagDictionary.create(network, null, config, EurostagFakeNodes.build(network, config));
@@ -128,16 +127,16 @@ public class EurostagNamingStrategyTest {
     }
 
     @Test
-    public void testEmptyForbiddenChars() throws IOException {
+    public void testEmptyForbiddenChars() {
         // assumption:  empty forbidden characters string means NO replacement
         EurostagEchExportConfig config = getConfig("", "_");
         EurostagDictionary ed = EurostagDictionary.create(network, null,
                 config, EurostagFakeNodes.build(network, config));
-        ed.toMap().keySet().stream().forEach(iidmId -> assertEquals(isValid(config, iidmId), isValid(config, ed.getEsgId(iidmId))));
+        ed.toMap().keySet().forEach(iidmId -> assertEquals(isValid(config, iidmId), isValid(config, ed.getEsgId(iidmId))));
     }
 
     @Test
-    public void testDefaultCharsConfig() throws IOException {
+    public void testDefaultCharsConfig() {
         EurostagEchExportConfig config = getConfig(null, null);
         EurostagDictionary ed = EurostagDictionary.create(network, null, config, EurostagFakeNodes.build(network, config));
         ed.toMap().forEach((iidmId, esgId) -> {
