@@ -66,7 +66,7 @@ public class EsgWriter {
         recordWriter.addValue("1", 9); //...print-out of results in the ".lf" file
         recordWriter.addValue("1", 11); //...aving of results in file (.sav)
         if (parameters.getMaxNumIteration() > 99) {
-            throw new RuntimeException("max number of iteration has to be < 100");
+            throw new EsgException("max number of iteration has to be < 100");
         }
         recordWriter.addValue(parameters.getMaxNumIteration(), 13, 14); //...20
         recordWriter.addValue(parameters.getTolerance(), 16, 23);       //...0.005
@@ -497,7 +497,7 @@ public class EsgWriter {
         }
         writeGeneralComment(recordWriter, comment);
 
-        if (network.getAreas().size() > 0) {
+        if (!network.getAreas().isEmpty()) {
             for (EsgArea area : network.getAreas()
                     .stream()
                     .sorted(Comparator.comparing(EsgArea::getType).thenComparing(area -> area.getName().toString()))
@@ -507,84 +507,84 @@ public class EsgWriter {
             recordWriter.addNewLine();
         }
 
-        if (network.getNodes().size() > 0) {
+        if (!network.getNodes().isEmpty()) {
             for (EsgNode node : network.getNodes()) {
                 writeNode(node, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getCouplingDevices().size() > 0) {
+        if (!network.getCouplingDevices().isEmpty()) {
             for (EsgCouplingDevice couplingDevice : network.getCouplingDevices()) {
                 writeCouplingDevice(couplingDevice, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getLines().size() > 0) {
+        if (!network.getLines().isEmpty()) {
             for (EsgLine line : network.getLines()) {
                 writeLine(line, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getDissymmetricalBranches().size() > 0) {
+        if (!network.getDissymmetricalBranches().isEmpty()) {
             for (EsgDissymmetricalBranch branch : network.getDissymmetricalBranches()) {
                 writeDissymmetricalBranch(branch, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getDetailedTwoWindingTransformers().size() > 0) {
+        if (!network.getDetailedTwoWindingTransformers().isEmpty()) {
             for (EsgDetailedTwoWindingTransformer transformer : network.getDetailedTwoWindingTransformers()) {
                 writeDetailedTwoWindingTransformer(transformer, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getLoads().size() > 0) {
+        if (!network.getLoads().isEmpty()) {
             for (EsgLoad load : network.getLoads()) {
                 writeLoad(load, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getGenerators().size() > 0) {
+        if (!network.getGenerators().isEmpty()) {
             for (EsgGenerator generator : network.getGenerators()) {
                 writeGenerator(generator, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getCapacitorOrReactorBanks().size() > 0) {
+        if (!network.getCapacitorOrReactorBanks().isEmpty()) {
             for (EsgCapacitorOrReactorBank bank : network.getCapacitorOrReactorBanks()) {
                 writeCapacitorOrReactorBank(bank, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getStaticVarCompensators().size() > 0) {
+        if (!network.getStaticVarCompensators().isEmpty()) {
             for (EsgStaticVarCompensator svc : network.getStaticVarCompensators()) {
                 writeStaticVarCompensator(svc, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getDCNodes().size() > 0) {
+        if (!network.getDCNodes().isEmpty()) {
             for (EsgDCNode dcNode : network.getDCNodes()) {
                 writeDCNode(dcNode, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getDCLinks().size() > 0) {
+        if (!network.getDCLinks().isEmpty()) {
             for (EsgDCLink dcLink : network.getDCLinks()) {
                 writeDCLink(dcLink, recordWriter);
             }
             recordWriter.addNewLine();
         }
 
-        if (network.getAcdcVscConverters().size() > 0) {
+        if (!network.getAcdcVscConverters().isEmpty()) {
             for (EsgAcdcVscConverter vscConv : network.getAcdcVscConverters()) {
                 writeAcdcVscConverter(vscConv, recordWriter);
             }

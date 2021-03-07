@@ -106,12 +106,12 @@ public final class EchUtil {
         final DecoratedBus decoratedBus = new DecoratedBus(b);
         b.visitConnectedEquipments(new DefaultTopologyVisitor() {
             @Override
-            public void visitLine(Line line, Line.Side side) {
+            public void visitLine(Line line, Branch.Side side) {
                 decoratedBus.branch++;
             }
 
             @Override
-            public void visitTwoWindingsTransformer(TwoWindingsTransformer transformer, TwoWindingsTransformer.Side side) {
+            public void visitTwoWindingsTransformer(TwoWindingsTransformer transformer, Branch.Side side) {
                 decoratedBus.branch++;
             }
 

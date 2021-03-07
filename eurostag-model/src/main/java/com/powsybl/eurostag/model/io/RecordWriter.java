@@ -6,6 +6,8 @@
  */
 package com.powsybl.eurostag.model.io;
 
+import com.powsybl.eurostag.model.EsgException;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Locale;
@@ -84,7 +86,7 @@ public class RecordWriter {
 
     public void addValue(String aKey, int aColStart, int aColEnd, Alignment alignment) throws IOException {
         if (aColEnd < aColStart) {
-            throw new RuntimeException("Bad record encoding for " + aKey);
+            throw new EsgException("Bad record encoding for " + aKey);
         }
         int size = 1 + aColEnd - aColStart;
 

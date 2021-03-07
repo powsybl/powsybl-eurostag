@@ -10,6 +10,7 @@ package com.powsybl.eurostag.converter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.powsybl.eurostag.model.EsgException;
 import com.powsybl.iidm.network.*;
 
 import java.util.*;
@@ -65,7 +66,7 @@ public final class BranchParallelIndexes {
     private static char incParallelIndex(char index) {
         char idx = index;
         if (idx == 'Z') {
-            throw new RuntimeException("Number max of parallel index reached");
+            throw new EsgException("Number max of parallel index reached");
         }
         if (idx == '9') {
             return 'A';

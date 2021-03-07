@@ -11,6 +11,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.powsybl.eurostag.model.Esg8charName;
 import com.powsybl.eurostag.model.EsgBranchName;
+import com.powsybl.eurostag.model.EsgException;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.util.Identifiables;
 import org.slf4j.Logger;
@@ -44,9 +45,7 @@ public final class EurostagDictionary {
     public static EurostagDictionary create(Network network, BranchParallelIndexes parallelIndexes, EurostagEchExportConfig config, EurostagFakeNodes fakeNodes) {
         EurostagDictionary dictionary = new EurostagDictionary(config);
 
-        fakeNodes.esgIdsAsStream().forEach(esgId -> {
-            dictionary.addIfNotExist(esgId, esgId);
-        });
+        fakeNodes.esgIdsAsStream().forEach(esgId -> dictionary.addIfNotExist(esgId, esgId));
 
         Set<String> busIds = Identifiables.sort(EchUtil.getBuses(network, config)).stream().map(Bus::getId).collect(Collectors.toSet());
         Set<String> loadIds = new LinkedHashSet<>();
@@ -146,7 +145,7 @@ public final class EurostagDictionary {
         if (iidmId2esgId.containsKey(iidmId)) {
             String errorMsg = "IIDM id '" + iidmId + "' already exists in the dictionary";
             LOGGER.error(errorMsg);
-            throw new RuntimeException(errorMsg);
+            throw new EsgException(errorMsg);
         }
         iidmId2esgId.put(iidmId, esgId);
     }
@@ -157,7 +156,7 @@ public final class EurostagDictionary {
                 String errorMsg = "Esg id '" + esgId + "' is already associated to IIDM id '"
                         + iidmId2esgId.inverse().get(esgId) + "' impossible to associate it to IIDM id '" + iidmId + "'";
                 LOGGER.error(errorMsg);
-                throw new RuntimeException(errorMsg);
+                throw new EsgException(errorMsg);
             }
             iidmId2esgId.put(iidmId, esgId);
         }
@@ -167,7 +166,7 @@ public final class EurostagDictionary {
         if (!iidmId2esgId.containsKey(iidmId)) {
             String errorMsg = "IIDM id '" + iidmId + "' + not found in the dictionary";
             LOGGER.error(errorMsg);
-            throw new RuntimeException(errorMsg);
+            throw new EsgException(errorMsg);
         }
         return iidmId2esgId.get(iidmId);
     }
@@ -176,7 +175,7 @@ public final class EurostagDictionary {
         if (!iidmId2esgId.containsValue(esgId)) {
             String errorMsg = "ESG id '" + esgId + "' + not found in the dictionary";
             LOGGER.error(errorMsg);
-            throw new RuntimeException(errorMsg);
+            throw new EsgException(errorMsg);
         }
         return iidmId2esgId.inverse().get(esgId);
     }
@@ -194,34 +193,30 @@ public final class EurostagDictionary {
     }
 
     public void load(Path file) {
-        try {
-            try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.trim().isEmpty()) {
-                        continue;
-                    }
-                    String[] tokens = line.split(";");
-                    add(tokens[0], tokens[1]);
+        try (BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) {
+                    continue;
                 }
+                String[] tokens = line.split(";");
+                add(tokens[0], tokens[1]);
             }
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new EsgException(e);
         }
     }
 
     public void dump(Path file) {
-        try {
-            try (BufferedWriter os = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-                for (Map.Entry<String, String> entry : iidmId2esgId.entrySet()) {
-                    os.write(entry.getKey() + ";" + entry.getValue() + ";");
-                    os.newLine();
-                }
+        try (BufferedWriter os = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            for (Map.Entry<String, String> entry : iidmId2esgId.entrySet()) {
+                os.write(entry.getKey() + ";" + entry.getValue() + ";");
+                os.newLine();
             }
         } catch (IOException e) {
             LOGGER.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new EsgException(e);
         }
     }
 

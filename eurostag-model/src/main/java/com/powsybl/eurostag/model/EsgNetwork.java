@@ -121,8 +121,8 @@ public class EsgNetwork {
                 g.setXregge(EsgRegulatingMode.NOT_REGULATING);
             }
         }
-        if (minReactiveRangePb.size() > 0) {
-            LOGGER.warn("Reactive range too small, switch regulator off: " + minReactiveRangePb);
+        if (!minReactiveRangePb.isEmpty()) {
+            LOGGER.warn("Reactive range too small, switch regulator off: {}", minReactiveRangePb);
         }
 
         // Fix target voltage consistency issue

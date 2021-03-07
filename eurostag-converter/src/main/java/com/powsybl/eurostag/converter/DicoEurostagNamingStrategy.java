@@ -14,9 +14,7 @@ import com.powsybl.eurostag.model.EsgException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,21 +41,17 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
 
         private static final String SEPARATOR = ";";
 
-        private final Reader source;
-
-        // FIXME(mathbagu): pass the source to the read method instead?
-        DicoCsvReader(Reader source) {
-            this.source = source;
-        }
-
-        List<List<String>> readDicoMappings() throws IOException {
-            try (BufferedReader reader = new BufferedReader(source)) {
+        public static List<List<String>> readDicoMappings(Path dicoFile) {
+            try (BufferedReader reader = Files.newBufferedReader(dicoFile, StandardCharsets.UTF_8)) {
                 return reader.lines()
                         .skip(1)
                         .map(line -> Arrays.asList(line.split(SEPARATOR)))
                         .collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
+
     }
 
     public DicoEurostagNamingStrategy(Path dicoFile) {
@@ -66,17 +60,9 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
             LOGGER.error(errMsg);
             throw new EsgException(errMsg);
         } else {
-            LOGGER.debug("reading iidm-esgid mapping from csv file " + dicoFile);
+            LOGGER.debug("reading iidm-esgid mapping from csv file {}", dicoFile);
             // Note: csv files's first line is skipped, it is expected to be a header line
-            List<List<String>> dicoMappings;
-            try {
-                Reader reader = Files.newBufferedReader(dicoFile, StandardCharsets.UTF_8);
-                DicoCsvReader dicoReader = new DicoCsvReader(reader);
-                dicoMappings = dicoReader.readDicoMappings();
-            } catch (Exception e) {  // FIXME(mathbagu): which exception is thrown?
-                LOGGER.error(e.getMessage(), e);
-                throw new EsgException(e);
-            }
+            List<List<String>> dicoMappings = DicoCsvReader.readDicoMappings(dicoFile);
 
             int count = 1;
             for (List<String> row : dicoMappings) {
@@ -84,7 +70,7 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
                 String iidmId = row.get(0).trim();
                 String esgId = row.get(1).trim();
                 if (esgId.length() > NameType.GENERATOR.getLength()) {
-                    LOGGER.warn("Skipping mapping iidmId: " + iidmId + ", esgId: " + esgId + ". esgId's length > " + NameType.GENERATOR.getLength() + ".  Line " + count + " in " + dicoFile.toString());
+                    LOGGER.warn("Skipping mapping iidmId: {}, esgId: {}. esgId's length > {}. Line {} in {}", iidmId, esgId, NameType.GENERATOR.getLength(), count, dicoFile.toString());
                     continue;
                 }
                 if ("".equals(iidmId) || "".equals(esgId)) {
@@ -119,7 +105,7 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
         });
 
         //then process the entry that aren't, with the default strategy
-        if (dicoPartioned.get(false).size() > 0) {
+        if (!dicoPartioned.get(false).isEmpty()) {
             String notFoundMsgTemplate = "dico mapping not found for iidmId ids: {}";
             List<String> notInMapping = dicoPartioned.get(false);
             if (nameType == NameType.NODE) {

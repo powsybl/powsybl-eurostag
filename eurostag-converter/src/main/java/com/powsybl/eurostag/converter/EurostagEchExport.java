@@ -315,7 +315,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             while (additionalBanksIds.contains(newBankName)) {
                 String newCounter = String.format("%02d", counter++);
                 if (newCounter.length() > 2) {
-                    throw new RuntimeException("Renaming error " + nodeName + " -> " + newBankName);
+                    throw new EsgException("Renaming error " + nodeName + " -> " + newBankName);
                 }
                 newBankName = newBankNamePrefix + newCounter;
             }
@@ -626,15 +626,11 @@ public class EurostagEchExport implements EurostagEchExporter {
             //Bus regulatingBus = g.getRegulatingTerminal().getBusBreakerView().getConnectableBus();
             ConnectionBus regulatingBus = ConnectionBus.fromTerminal(g.getRegulatingTerminal(), config, fakeNodes);
 
-            try {
-                esgNetwork.addGenerator(new EsgGenerator(new Esg8charName(dictionary.getEsgId(g.getId())),
-                        new Esg8charName(dictionary.getEsgId(bus.getId())),
-                        pgmin, pgen, pgmax, qgmin, qgen, qgmax, mode, vregge,
-                        new Esg8charName(dictionary.getEsgId(regulatingBus.getId())),
-                        qgensh, status));
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
+            esgNetwork.addGenerator(new EsgGenerator(new Esg8charName(dictionary.getEsgId(g.getId())),
+                    new Esg8charName(dictionary.getEsgId(bus.getId())),
+                    pgmin, pgen, pgmax, qgmin, qgen, qgmax, mode, vregge,
+                    new Esg8charName(dictionary.getEsgId(regulatingBus.getId())),
+                    qgensh, status));
         }
     }
 
@@ -698,7 +694,7 @@ public class EurostagEchExport implements EurostagEchExporter {
     //add a new couple (iidmId, esgId). EsgId is built from iidmId using a simple cut-name mapping strategy
     private String addToDictionary(String iidmId, EurostagDictionary dictionary, EurostagNamingStrategy.NameType nameType) {
         if (dictionary.iidmIdExists(iidmId)) {
-            throw new RuntimeException("iidmId " + iidmId + " already exists in dictionary");
+            throw new EsgException("iidmId " + iidmId + " already exists in dictionary");
         }
         String esgId = iidmId.length() > nameType.getLength() ? iidmId.substring(0, nameType.getLength())
                 : Strings.padEnd(iidmId, nameType.getLength(), ' ');
@@ -706,7 +702,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         while (dictionary.esgIdExists(esgId)) {
             String counterStr = Integer.toString(counter++);
             if (counterStr.length() > nameType.getLength()) {
-                throw new RuntimeException("Renaming fatal error " + iidmId + " -> " + esgId);
+                throw new EsgException("Renaming fatal error " + iidmId + " -> " + esgId);
             }
             esgId = esgId.substring(0, nameType.getLength() - counterStr.length()) + counterStr;
         }
@@ -728,7 +724,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         Esg8charName acNode = dictionary.iidmIdExists(vscConvBus.getId()) ? new Esg8charName(dictionary.getEsgId(vscConvBus.getId()))
                 : null;
         if (acNode == null) {
-            throw new RuntimeException("VSCConverter " + vscConv.getId() + " : acNode mapping not found");
+            throw new EsgException("VSCConverter " + vscConv.getId() + " : acNode mapping not found");
         }
         EsgAcdcVscConverter.ConverterState xstate = EsgAcdcVscConverter.ConverterState.ON; // converter state ' ' ON; 'S' OFF - always ON, even when the bus is disconnected?
         EsgAcdcVscConverter.DCControlMode xregl = isPmode ? EsgAcdcVscConverter.DCControlMode.AC_ACTIVE_POWER : EsgAcdcVscConverter.DCControlMode.DC_VOLTAGE; // DC control mode 'P' AC_ACTIVE_POWER; 'V' DC_VOLTAGE
@@ -769,7 +765,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         if (connectedBus == null) {
             connectedBus = vscConv.getTerminal().getBusView().getConnectableBus();
             if (connectedBus == null) {
-                throw new RuntimeException("VSCConverter " + vscConv.getId() + " : connected bus not found!");
+                throw new EsgException("VSCConverter " + vscConv.getId() + " : connected bus not found!");
             }
         }
         double mvm = connectedBus.getV() / connectedBus.getVoltageLevel().getNominalV(); // Initial AC modulated voltage magnitude [p.u.]
