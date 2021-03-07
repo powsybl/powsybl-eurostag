@@ -36,11 +36,11 @@ public class EsgWriter {
         recordWriter.addValue("HEADER", 1, 6);
         recordWriter.addValue(parameters.getEditDate().toString("dd/MM/yy"), 12, 19);
         recordWriter.addValue(EsgNetwork.VERSION, 21, 28);
-        recordWriter.newLine();
-        recordWriter.newLine();
+        recordWriter.addNewLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("B", 1, 1);
-        recordWriter.newLine();
-        recordWriter.newLine();
+        recordWriter.addNewLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgGeneralParameters.StartMode mode) {
@@ -75,47 +75,47 @@ public class EsgWriter {
         recordWriter.addValue(parameters.getSnref(), 67, 74);           //...100. Mva
         recordWriter.addValue(toChar(parameters.isTransformerVoltageControl()), 76); //...1 = No
         recordWriter.addValue(toChar(parameters.isSvcVoltageControl()), 78);           //...
-        recordWriter.newLine();
-        recordWriter.newLine();
+        recordWriter.addNewLine();
+        recordWriter.addNewLine();
     }
 
     private void writeSpecialParameters(RecordWriter recordWriter) throws IOException {
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("INPVPQ", 4, 11);
         recordWriter.addValue(specialParameters.getInpvpq(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("THMAX", 4, 11);
         recordWriter.addValue(specialParameters.getThmax(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("EMAXF", 4, 11);
         recordWriter.addValue(specialParameters.getEmaxf(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("ZMIN", 4, 11);
         recordWriter.addValue(specialParameters.getZmin(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("RAMIN", 4, 11);
         recordWriter.addValue(specialParameters.getRamin(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("RAMAX", 4, 11);
         recordWriter.addValue(specialParameters.getRamax(), 13, 22);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("SP", 1, 2);
         recordWriter.addValue("TOLPLO", 4, 11);
         recordWriter.addValue(specialParameters.getTolplo(), 13, 22);
-        recordWriter.newLine();
-        recordWriter.newLine();
+        recordWriter.addNewLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeGeneralComment(RecordWriter recordWriter, String comment) throws IOException {
         recordWriter.addValue("GC", 1, 2);
         recordWriter.addValue(comment != null ? comment : "", 4, 80);
-        recordWriter.newLine();
-        recordWriter.newLine();
+        recordWriter.addNewLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeArea(EsgArea area, RecordWriter recordWriter) throws IOException {
@@ -133,7 +133,7 @@ public class EsgWriter {
         recordWriter.addValue(typecard, 1, 2);
         recordWriter.addValue(area.getName().toString(), 4, 5);
         recordWriter.addValue("", 6, 20);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeNode(EsgNode node, RecordWriter recordWriter) throws IOException {
@@ -143,14 +143,14 @@ public class EsgWriter {
         recordWriter.addValue(node.getVbase(), 85, 92);
         recordWriter.addValue(node.getVinit(), 99, 106);
         recordWriter.addValue(node.getVangl(), 108, 115);
-        recordWriter.addValue("0.", 117, 124, RecordWriter.Justification.Right);
-        recordWriter.addValue("0.", 126, 133, RecordWriter.Justification.Right);
-        recordWriter.newLine();
+        recordWriter.addValue("0.", 117, 124, RecordWriter.Alignment.RIGHT);
+        recordWriter.addValue("0.", 126, 133, RecordWriter.Alignment.RIGHT);
+        recordWriter.addNewLine();
         if (node.isSlackBus()) {
             recordWriter.addValue("5", 1);
             recordWriter.addValue(node.getName().toString(), 4, 11);
             recordWriter.addValue(node.getVangl(), 40, 47);
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
     }
 
@@ -182,7 +182,7 @@ public class EsgWriter {
         recordWriter.addValue(line.getRate(), 58, 65);
         recordWriter.addValue(0.f, 67, 74);   //...Free numeric attribute 1
         recordWriter.addValue(0.f, 76, 83);   //...Free numeric attribute 2
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgCouplingDevice.ConnectionStatus code) {
@@ -204,7 +204,7 @@ public class EsgWriter {
         recordWriter.addValue(couplingDevice.getName().getXpp(), 20);
         recordWriter.addValue(0.f, 67, 74);   //...Free numeric attribute 1
         recordWriter.addValue(0.f, 76, 83);   //...Free numeric attribute 2
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeDissymmetricalBranch(EsgDissymmetricalBranch dissymmetricalBranch, RecordWriter recordWriter) throws IOException {
@@ -218,7 +218,7 @@ public class EsgWriter {
         recordWriter.addValue(dissymmetricalBranch.getGs(), 40, 47);
         recordWriter.addValue(dissymmetricalBranch.getBs(), 49, 56);
         recordWriter.addValue(dissymmetricalBranch.getRate(), 58, 65);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
 
         //...second line record
         recordWriter.addValue("P", 1);
@@ -226,7 +226,7 @@ public class EsgWriter {
         recordWriter.addValue(dissymmetricalBranch.getRxb2(), 31, 38);
         recordWriter.addValue(dissymmetricalBranch.getGs2(), 40, 47);
         recordWriter.addValue(dissymmetricalBranch.getBs2(), 49, 56);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgDetailedTwoWindingTransformer.RegulatingMode mode) {
@@ -257,7 +257,7 @@ public class EsgWriter {
         recordWriter.addValue(transformer.getEsat(), 57, 64);
         recordWriter.addValue(0.f, 66, 73);   //...Free numeric attribute 1
         recordWriter.addValue(0.f, 75, 82);   //...Free numeric attribute 2
-        recordWriter.newLine();
+        recordWriter.addNewLine();
 
         // second line record
         recordWriter.addValue("48", 1, 2);
@@ -268,7 +268,7 @@ public class EsgWriter {
         recordWriter.addValue(transformer.getPregmin(), 50, 57);
         recordWriter.addValue(transformer.getPregmax(), 59, 66);
         recordWriter.addValue(toChar(transformer.getXregtr()), 68);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
 
         // tap records
         for (EsgDetailedTwoWindingTransformer.Tap tap : transformer.getTaps()) {
@@ -278,7 +278,7 @@ public class EsgWriter {
             recordWriter.addValue(tap.getUno2(), 36, 43);
             recordWriter.addValue(tap.getUcc(), 45, 52);
             recordWriter.addValue(tap.getDephas(), 54, 61);
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
     }
 
@@ -306,7 +306,7 @@ public class EsgWriter {
         recordWriter.addValue(load.getQldstp(), 69, 76);
         recordWriter.addValue(0.f, 78, 85);       //...Free numeric attribute 1
         recordWriter.addValue(0.f, 87, 94);       //...Free numeric attribute 2
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgRegulatingMode mode) {
@@ -337,7 +337,7 @@ public class EsgWriter {
         recordWriter.addValue(generator.getQgensh(), 98, 105);
         recordWriter.addValue(0.f, 107, 114);       //...Free numeric attribute 1
         recordWriter.addValue(0.f, 116, 123);       //...Free numeric attribute 2
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgCapacitorOrReactorBank.RegulatingMode mode) {
@@ -364,7 +364,7 @@ public class EsgWriter {
         recordWriter.addValue(0.f, 85, 92);       //...Free numeric attribute 1
         recordWriter.addValue(0.f, 94, 101);      //...Free numeric attribute 2
         recordWriter.addValue(" ", 103, 110);      //...Free alphanumeric attribute
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeStaticVarCompensator(EsgStaticVarCompensator svc, RecordWriter recordWriter) throws IOException {
@@ -382,7 +382,7 @@ public class EsgWriter {
         recordWriter.addValue(0.f, 107, 114); //...Free numeric attribute 1
         recordWriter.addValue(0.f, 116, 123); //...Free numeric attribute 2
         recordWriter.addValue(" ", 125, 132); //...Free alphanumeric attribute
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static void writeDCNode(EsgDCNode dcNode, RecordWriter recordWriter) throws IOException {
@@ -391,7 +391,7 @@ public class EsgWriter {
         recordWriter.addValue(dcNode.getArea().toString(), 15, 16);
         recordWriter.addValue(dcNode.getVbase(), 18, 25);
         recordWriter.addValue(dcNode.getVinit(), 27, 34);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgDCLink.LinkStatus linkStatus) {
@@ -409,7 +409,7 @@ public class EsgWriter {
         recordWriter.addValue(link.getXpp(), 24);
         recordWriter.addValue(link.getRldc(), 26, 33);
         recordWriter.addValue(toChar(link.getLinkStatus()), 35, 35);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     private static char toChar(EsgAcdcVscConverter.ConverterState state) {
@@ -466,7 +466,7 @@ public class EsgWriter {
         if (!Double.isNaN(vscConverter.getQvscsh())) {
             recordWriter.addValue(vscConverter.getQvscsh(), 111, 118);
         }
-        recordWriter.newLine();
+        recordWriter.addNewLine();
         recordWriter.addValue("DC V", 1, 4);
         recordWriter.addValue(vscConverter.getPvscmin(), 6, 13);
         recordWriter.addValue(vscConverter.getPvscmax(), 15, 22);
@@ -477,7 +477,7 @@ public class EsgWriter {
         recordWriter.addValue(vscConverter.getVsb2(), 60, 67);
         recordWriter.addValue(vscConverter.getMvm(), 69, 76);
         recordWriter.addValue(vscConverter.getMva(), 78, 85);
-        recordWriter.newLine();
+        recordWriter.addNewLine();
     }
 
     public void write(Writer writer) throws IOException {
@@ -504,91 +504,91 @@ public class EsgWriter {
                     .collect(Collectors.toList())) {
                 writeArea(area, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getNodes().size() > 0) {
             for (EsgNode node : network.getNodes()) {
                 writeNode(node, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getCouplingDevices().size() > 0) {
             for (EsgCouplingDevice couplingDevice : network.getCouplingDevices()) {
                 writeCouplingDevice(couplingDevice, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getLines().size() > 0) {
             for (EsgLine line : network.getLines()) {
                 writeLine(line, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getDissymmetricalBranches().size() > 0) {
             for (EsgDissymmetricalBranch branch : network.getDissymmetricalBranches()) {
                 writeDissymmetricalBranch(branch, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getDetailedTwoWindingTransformers().size() > 0) {
             for (EsgDetailedTwoWindingTransformer transformer : network.getDetailedTwoWindingTransformers()) {
                 writeDetailedTwoWindingTransformer(transformer, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getLoads().size() > 0) {
             for (EsgLoad load : network.getLoads()) {
                 writeLoad(load, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getGenerators().size() > 0) {
             for (EsgGenerator generator : network.getGenerators()) {
                 writeGenerator(generator, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getCapacitorOrReactorBanks().size() > 0) {
             for (EsgCapacitorOrReactorBank bank : network.getCapacitorOrReactorBanks()) {
                 writeCapacitorOrReactorBank(bank, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getStaticVarCompensators().size() > 0) {
             for (EsgStaticVarCompensator svc : network.getStaticVarCompensators()) {
                 writeStaticVarCompensator(svc, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getDCNodes().size() > 0) {
             for (EsgDCNode dcNode : network.getDCNodes()) {
                 writeDCNode(dcNode, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getDCLinks().size() > 0) {
             for (EsgDCLink dcLink : network.getDCLinks()) {
                 writeDCLink(dcLink, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
 
         if (network.getAcdcVscConverters().size() > 0) {
             for (EsgAcdcVscConverter vscConv : network.getAcdcVscConverters()) {
                 writeAcdcVscConverter(vscConv, recordWriter);
             }
-            recordWriter.newLine();
+            recordWriter.addNewLine();
         }
     }
 }

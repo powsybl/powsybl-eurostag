@@ -16,13 +16,13 @@ import java.util.Locale;
  */
 public class RecordWriter {
 
-    public static final String NEWLINE = System.getProperty("line.separator");
+    private static final String NEW_LINE = System.getProperty("line.separator");
 
-    public static final Locale LOCALE = new Locale("en", "US");
+    private static final Locale LOCALE = new Locale("en", "US");
 
-    public enum Justification {
-        Right,
-        Left
+    public enum Alignment {
+        RIGHT,
+        LEFT
     }
 
     private final Writer writer;
@@ -58,31 +58,31 @@ public class RecordWriter {
 
     public void addValue(double aValue, int aColStart, int aColEnd) throws IOException {
         String key = format(aValue, aColEnd - aColStart);
-        this.addValue(key, aColStart, aColEnd, Justification.Right);
+        this.addValue(key, aColStart, aColEnd, Alignment.RIGHT);
     }
 
     public void addValue(int aValue, int aColStart, int aColEnd) throws IOException {
         String key = Integer.toString(aValue);
-        this.addValue(key, aColStart, aColEnd, Justification.Right);
+        this.addValue(key, aColStart, aColEnd, Alignment.RIGHT);
     }
 
     public void addValue(String aKey, int aColStart, int aColEnd) throws IOException {
-        this.addValue(aKey, aColStart, aColEnd, Justification.Left);
+        this.addValue(aKey, aColStart, aColEnd, Alignment.LEFT);
     }
 
     public void addValue(char aKey, int aColStart) throws IOException {
-        this.addValue(Character.toString(aKey), aColStart, aColStart, Justification.Left);
+        this.addValue(Character.toString(aKey), aColStart, aColStart, Alignment.LEFT);
     }
 
     public void addValue(char aKey, int aColStart, int aColEnd) throws IOException {
-        this.addValue(Character.toString(aKey), aColStart, aColEnd, Justification.Left);
+        this.addValue(Character.toString(aKey), aColStart, aColEnd, Alignment.LEFT);
     }
 
     public void addValue(String aKey, int aColStart) throws IOException {
         this.addValue(aKey, aColStart, aColStart + aKey.length() - 1);
     }
 
-    public void addValue(String aKey, int aColStart, int aColEnd, Justification aJust) throws IOException {
+    public void addValue(String aKey, int aColStart, int aColEnd, Alignment alignment) throws IOException {
         if (aColEnd < aColStart) {
             throw new RuntimeException("Bad record encoding for " + aKey);
         }
@@ -96,7 +96,7 @@ public class RecordWriter {
         }
         mCurrentLinePos += size;
 
-        if (aJust == Justification.Left) {
+        if (alignment == Alignment.LEFT) {
             writer.append(String.format(LOCALE, "%-" + size + "s", aKey));
         } else {
             writer.append(String.format(LOCALE, "%" + size + "s", aKey));
@@ -104,10 +104,10 @@ public class RecordWriter {
     }
 
     /**
-     * Add anew line at the end of the current record line
+     * Add a new line at the end of the current record line
      */
-    public void newLine() throws IOException {
+    public void addNewLine() throws IOException {
         mCurrentLinePos = 1;
-        writer.append(NEWLINE);
+        writer.append(NEW_LINE);
     }
 }
