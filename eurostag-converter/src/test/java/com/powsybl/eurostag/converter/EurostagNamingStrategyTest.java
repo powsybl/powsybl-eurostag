@@ -12,6 +12,7 @@ import com.powsybl.commons.config.InMemoryPlatformConfig;
 import com.powsybl.commons.config.MapModuleConfig;
 import com.powsybl.iidm.network.Generator;
 import com.powsybl.iidm.network.Network;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -117,13 +118,8 @@ public class EurostagNamingStrategyTest {
 
     @Test
     public void testForbiddenCharsInvalidConfig() {
-        try {
-            EurostagEchExportConfig config = getConfig(";^", ";");
-            EurostagDictionary ed = EurostagDictionary.create(network, null, config, EurostagFakeNodes.build(network, config));
-            throw new RuntimeException("should not be this statement");
-        } catch (IllegalArgumentException err) {
-            // FIXME(mathbagu): to be checked
-        }
+        Assert.assertThrows("forbiddenCharactersReplacement ; must not appear also in the forbiddenCharacters string: ;^", IllegalArgumentException.class,
+                () -> getConfig(";^", ";"));
     }
 
     @Test

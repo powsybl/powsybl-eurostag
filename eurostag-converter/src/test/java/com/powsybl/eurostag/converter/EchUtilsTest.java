@@ -12,6 +12,7 @@ import com.powsybl.iidm.network.HvdcLine;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.iidm.network.test.HvdcTestNetwork;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,13 +43,7 @@ public class EchUtilsTest {
 
     @Test
     public void testGetHvdcLineDcVoltageNull() {
-        try {
-            EchUtil.getHvdcLineDcVoltage(null);
-            fail("Expected not null parameter");
-        } catch (NullPointerException e) {
-            // FIXME(mathbagu): to be check
-        }
-
+        Assert.assertThrows("", NullPointerException.class, () -> EchUtil.getHvdcLineDcVoltage(null));
     }
 
     @Test

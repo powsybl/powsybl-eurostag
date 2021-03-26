@@ -31,8 +31,6 @@ public class CheckEurostagEchExporterConfigTest {
     public void setUp() {
         fileSystem = Jimfs.newFileSystem(Configuration.unix());
         platformConfig = new InMemoryPlatformConfig(fileSystem);
-        MapModuleConfig defaultConfig = platformConfig.createModuleConfig("componentDefaultConfig");
-        // FIXME(mathbagu): unused?!
     }
 
     @After

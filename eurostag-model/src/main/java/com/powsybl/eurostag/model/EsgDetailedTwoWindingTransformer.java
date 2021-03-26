@@ -89,7 +89,7 @@ public class EsgDetailedTwoWindingTransformer {
         this.esat = esat;
         this.ktpnom = ktpnom;
         this.ktap8 = ktap8;
-        this.zbusr = zbusr;  // FIXME(mathbagu): could it be null?
+        this.zbusr = zbusr;
         this.voltr = voltr;
         this.pregmin = pregmin;
         this.pregmax = pregmax;

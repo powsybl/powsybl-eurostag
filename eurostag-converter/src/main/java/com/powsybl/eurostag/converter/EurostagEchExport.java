@@ -96,7 +96,8 @@ public class EurostagEchExport implements EurostagEchExporter {
     private void createNodes(EsgNetwork esgNetwork) {
         fakeNodes.referencedEsgIdsAsStream().forEach(esgId -> {
             VoltageLevel vlevel = fakeNodes.getVoltageLevelByEsgId(esgId);
-            double nominalV = (vlevel != null) ? vlevel.getNominalV() : 380.0; // FIXME(mathbagu)
+            // FIXME(mathbagu): if vlevel is null, why the nominalV is set 380.0?
+            double nominalV = (vlevel != null) ? vlevel.getNominalV() : 380.0;
             esgNetwork.addNode(createNode(esgId, EchUtil.FAKE_AREA, nominalV, nominalV, 0f, false));
         });
 
@@ -641,20 +642,31 @@ public class EurostagEchExport implements EurostagEchExporter {
                 LOGGER.warn("not in main component, skipping ShuntCompensator: {}", sc.getId());
                 continue;
             }
-            ConnectionBus bus = ConnectionBus.fromTerminal(sc.getTerminal(), config, fakeNodes);
 
-            //...number of steps in service
-            int ieleba = bus.isConnected() ? sc.getSectionCount() : 0; // not really correct, because it can be connected with zero section, EUROSTAG should be modified...
-            double vnom = sc.getTerminal().getVoltageLevel().getNominalV();
-            double plosba = 1000 * vnom * vnom * 0.; // no active lost in the iidm shunt compensator. Expressed in kw
-            // FIXME(mathbagu): double rcapba = vnom * vnom * sc.getbPerSection();
-            double rcapba = 0.0;
-            int imaxba = sc.getMaximumSectionCount();
-            EsgCapacitorOrReactorBank.RegulatingMode xregba = EsgCapacitorOrReactorBank.RegulatingMode.NOT_REGULATING;
-            esgNetwork.addCapacitorsOrReactorBanks(new EsgCapacitorOrReactorBank(new Esg8charName(dictionary.getEsgId(sc.getId())),
-                    new Esg8charName(dictionary.getEsgId(bus.getId())),
-                    ieleba, plosba, rcapba, imaxba, xregba));
+            if (sc.getModelType() == ShuntCompensatorModelType.LINEAR) {
+                createEsgCapacitorOrReactorBank(esgNetwork, sc);
+            } else if (sc.getModelType() == ShuntCompensatorModelType.NON_LINEAR) {
+                throw new EsgException("TODO: Non linear shunt compensators are not supported");
+            } else {
+                throw new AssertionError("Unsupported shunt compensator type: " + sc.getModelType());
+            }
         }
+    }
+
+    private void createEsgCapacitorOrReactorBank(EsgNetwork esgNetwork, ShuntCompensator sc) {
+        ShuntCompensatorLinearModel model = sc.getModel(ShuntCompensatorLinearModel.class);
+        ConnectionBus bus = ConnectionBus.fromTerminal(sc.getTerminal(), config, fakeNodes);
+
+        //...number of steps in service
+        int ieleba = bus.isConnected() ? sc.getSectionCount() : 0; // not really correct, because it can be connected with zero section, EUROSTAG should be modified...
+        double vnom = sc.getTerminal().getVoltageLevel().getNominalV();
+        double plosba = 1000 * vnom * vnom * 0.; // no active lost in the iidm shunt compensator. Expressed in kw
+        double rcapba = vnom * vnom * model.getBPerSection();
+        int imaxba = sc.getMaximumSectionCount();
+        EsgCapacitorOrReactorBank.RegulatingMode xregba = EsgCapacitorOrReactorBank.RegulatingMode.NOT_REGULATING;
+        esgNetwork.addCapacitorsOrReactorBanks(new EsgCapacitorOrReactorBank(new Esg8charName(dictionary.getEsgId(sc.getId())),
+                new Esg8charName(dictionary.getEsgId(bus.getId())),
+                ieleba, plosba, rcapba, imaxba, xregba));
     }
 
     private void createStaticVarCompensators(EsgNetwork esgNetwork) {
