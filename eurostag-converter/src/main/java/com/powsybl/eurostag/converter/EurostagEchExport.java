@@ -93,7 +93,8 @@ public class EurostagEchExport implements EurostagEchExporter {
     }
 
     private EsgNode createNode(String busId, VoltageLevel vl, double v, double angle, boolean slackBus) {
-        return createNode(busId, vl.getSubstation().getNullableCountry().name(), vl.getNominalV(), v, angle, slackBus);
+        String countryCode = vl.getSubstation().getCountry().map(Country::name).orElse(EchUtil.FAKE_AREA);
+        return createNode(busId, countryCode, vl.getNominalV(), v, angle, slackBus);
     }
 
     private void createNodes(EsgNetwork esgNetwork) {
@@ -844,6 +845,10 @@ public class EurostagEchExport implements EurostagEchExporter {
             }
             HvdcConverterStation<?> convStation1 = hvdcLine.getConverterStation1();
             HvdcConverterStation<?> convStation2 = hvdcLine.getConverterStation2();
+
+            if (convStation1.getHvdcType() == HvdcConverterStation.HvdcType.LCC || convStation2.getHvdcType() == HvdcConverterStation.HvdcType.LCC) {
+                throw new UnsupportedOperationException("Conversion of LCC is not supported yet");
+            }
 
             //create two dc nodes, one for each conv. station
             Esg8charName hvdcNodeName1 = new Esg8charName(addToDictionary("DC_" + convStation1.getId(), dictionary, EurostagNamingStrategy.NameType.NODE));

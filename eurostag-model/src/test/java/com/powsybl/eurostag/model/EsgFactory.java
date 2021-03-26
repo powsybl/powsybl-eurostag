@@ -9,7 +9,7 @@ package com.powsybl.eurostag.model;
 /**
  * @author Mathieu BAGUE {@literal <mathieu.bague at rte-france.com>}
  */
-public final class EurostagFactory {
+public final class EsgFactory {
 
     private static final Esg2charName FR = new Esg2charName("FR");
     private static final Esg2charName FA = new Esg2charName("FA");
@@ -28,7 +28,7 @@ public final class EurostagFactory {
     private static final Esg8charName DC_C2 = new Esg8charName("DC_C2");
     private static final Esg8charName GROUND = new Esg8charName("GROUND");
 
-    private EurostagFactory() {
+    private EsgFactory() {
     }
 
     public static EsgNetwork create() {

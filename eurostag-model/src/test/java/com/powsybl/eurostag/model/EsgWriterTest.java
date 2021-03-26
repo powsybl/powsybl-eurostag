@@ -21,7 +21,7 @@ import java.nio.file.Path;
 /**
  * @author Mathieu BAGUE {@literal <mathieu.bague at rte-france.com>}
  */
-public class EurostagTest extends AbstractConverterTest {
+public class EsgWriterTest extends AbstractConverterTest {
 
     private void test(EsgNetwork network, String name, String date, String resource) throws IOException {
         Path actualPath = fileSystem.getPath(resource);
@@ -41,13 +41,13 @@ public class EurostagTest extends AbstractConverterTest {
 
     @Test
     public void test() throws IOException {
-        EsgNetwork network = EurostagFactory.create();
+        EsgNetwork network = EsgFactory.create();
         test(network, "sim1/InitialState", "2016-03-01", "eurostag-tutorial-example1.ech");
     }
 
     @Test
     public void testHvdc() throws IOException {
-        EsgNetwork network = EurostagFactory.createHvdc();
+        EsgNetwork network = EsgFactory.createHvdc();
         test(network, "hvdctest/InitialState", "2016-01-01", "eurostag-hvdc-test.ech");
     }
 

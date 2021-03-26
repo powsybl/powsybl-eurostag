@@ -10,6 +10,7 @@ package com.powsybl.eurostag.converter;
 import com.google.common.io.CharStreams;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.iidm.network.test.FourSubstationsNodeBreakerFactory;
 import com.powsybl.iidm.network.test.HvdcTestNetwork;
 import com.powsybl.iidm.network.test.SvcTestCaseFactory;
 import com.powsybl.eurostag.model.EsgGeneralParameters;
@@ -61,6 +62,18 @@ public class EurostagEchExportTest {
         Network network = SvcTestCaseFactory.create();
         EsgSpecialParameters specialParameters = new EsgSpecialParameters();
         test(network, "/eurostag-svc-test.ech", LocalDate.parse("2016-01-01"), specialParameters);
+    }
+
+    @Test
+    public void testFourSubstations() throws IOException {
+        Network network = FourSubstationsNodeBreakerFactory.create();
+
+        // FIXME(mathbagu): remove this code when LCC export is implemented
+        network.getHvdcLine("HVDC2").remove();
+        network.getLccConverterStation("LCC1").remove();
+        network.getLccConverterStation("LCC2").remove();
+
+        test(network, "/four-substations.ech", LocalDate.parse("2020-01-02"), null);
     }
 
     @Test
