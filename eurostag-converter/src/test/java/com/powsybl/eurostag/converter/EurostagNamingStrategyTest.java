@@ -119,7 +119,7 @@ public class EurostagNamingStrategyTest {
     @Test
     public void testForbiddenCharsInvalidConfig() {
         Assert.assertThrows("forbiddenCharactersReplacement ; must not appear also in the forbiddenCharacters string: ;^", IllegalArgumentException.class,
-                () -> getConfig(";^", ";"));
+            () -> getConfig(";^", ";"));
     }
 
     @Test
