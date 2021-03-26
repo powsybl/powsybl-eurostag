@@ -264,9 +264,9 @@ public class EsgWriter {
         recordWriter.addValue(transformer.getKtpnom(), 22, 25);
         recordWriter.addValue(transformer.getKtap8(), 27, 30);
         recordWriter.addValue(transformer.getZbusr() != null ? transformer.getZbusr().toString() : "", 32, 39);
-        recordWriter.addValue(transformer.getVoltr(), 41, 48);
-        recordWriter.addValue(transformer.getPregmin(), 50, 57);
-        recordWriter.addValue(transformer.getPregmax(), 59, 66);
+        recordWriter.addValue(transformer.getVoltr(), 41, 48);  // FIXME(mathbagu): seems optional
+        recordWriter.addValue(transformer.getPregmin(), 50, 57);  // FIXME(mathbagu): seems optional
+        recordWriter.addValue(transformer.getPregmax(), 59, 66);  // FIXME(mathbagu): seems optional
         recordWriter.addValue(toChar(transformer.getXregtr()), 68);
         recordWriter.addNewLine();
 
