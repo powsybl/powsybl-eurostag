@@ -40,8 +40,11 @@ public class EurostagEchExport implements EurostagEchExporter {
      */
     static final float B_EPSILON = 0.000001f;
 
+    // FIXME(mathbagu): probably deprecated since Boundary object exists
     private static final String XNODE_V_PROPERTY = "xnode_v";
     private static final String XNODE_ANGLE_PROPERTY = "xnode_angle";
+
+    private static final String SKIPPING_NOT_IN_MAIN_COMPONENT = "not in main component, skipping {}: {}";
 
     protected final Network network;
     protected final EurostagEchExportConfig config;
@@ -109,7 +112,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (Bus b : Identifiables.sort(EchUtil.getBuses(network, config))) {
             // skip buses not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(b)) {
-                LOGGER.warn("not in main component, skipping Bus: {}", b.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "Bus", b.getId());
                 continue;
             }
             esgNetwork.addNode(createNode(b.getId(), b.getVoltageLevel(), b.getV(), b.getAngle(), sb == b));
@@ -117,7 +120,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (DanglingLine dl : Identifiables.sort(network.getDanglingLines())) {
             // skip DLs not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(dl, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping DanglingLine: {}", dl.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "DanglingLine", dl.getId());
                 continue;
             }
             String strV = dl.getProperty(XNODE_V_PROPERTY);
@@ -200,7 +203,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (Line l : Identifiables.sort(network.getLines())) {
             // skip lines not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(l, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping Line: {}", l.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "Line", l.getId());
                 continue;
             }
             // It is better to model branches as -normal- lines because it is impossible to open dissymmetrical branches and to do short-circuit on them
@@ -273,7 +276,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (DanglingLine dl : Identifiables.sort(network.getDanglingLines())) {
             // skip if not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(dl, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping DanglingLine: {}", dl.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "DanglingLine", dl.getId());
                 continue;
             }
             ConnectionBus bus1 = ConnectionBus.fromTerminal(dl.getTerminal(), config, fakeNodes);
@@ -400,7 +403,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (TwoWindingsTransformer twt : Identifiables.sort(network.getTwoWindingsTransformers())) {
             // skip transformers not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(twt, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping TwoWindingsTransformer: {}", twt.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "TwoWindingsTransformer", twt.getId());
                 continue;
             }
 
@@ -571,7 +574,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (Load l : Identifiables.sort(network.getLoads())) {
             // skip loads not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(l, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping Load: {}", l.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "Load", l.getId());
                 continue;
             }
             ConnectionBus bus = ConnectionBus.fromTerminal(l.getTerminal(), config, fakeNodes);
@@ -580,7 +583,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (DanglingLine dl : Identifiables.sort(network.getDanglingLines())) {
             // skip dls not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(dl, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping DanglingLine: {}", dl.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "DanglingLine", dl.getId());
                 continue;
             }
             ConnectionBus bus = new ConnectionBus(true, EchUtil.getBusId(dl));
@@ -592,7 +595,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (Generator g : Identifiables.sort(network.getGenerators())) {
             // skip generators not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(g, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping Generator: {}", g.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "Generator", g.getId());
                 continue;
             }
 
@@ -639,14 +642,14 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (ShuntCompensator sc : Identifiables.sort(network.getShuntCompensators())) {
             // skip shunts not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(sc, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping ShuntCompensator: {}", sc.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "ShuntCompensator", sc.getId());
                 continue;
             }
 
             if (sc.getModelType() == ShuntCompensatorModelType.LINEAR) {
                 createEsgCapacitorOrReactorBank(esgNetwork, sc);
             } else if (sc.getModelType() == ShuntCompensatorModelType.NON_LINEAR) {
-                throw new EsgException("TODO: Non linear shunt compensators are not supported");
+                throw new EsgException("TODO: Non linear shunt compensator are not supported");
             } else {
                 throw new AssertionError("Unsupported shunt compensator type: " + sc.getModelType());
             }
@@ -673,7 +676,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         for (StaticVarCompensator svc : Identifiables.sort(network.getStaticVarCompensators())) {
             // skip SVCs not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(svc, config.isNoSwitch())) {
-                LOGGER.warn("not in main component, skipping StaticVarCompensator: {}", svc.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "StaticVarCompensator", svc.getId());
                 continue;
             }
             ConnectionBus bus = ConnectionBus.fromTerminal(svc.getTerminal(), config, fakeNodes);
