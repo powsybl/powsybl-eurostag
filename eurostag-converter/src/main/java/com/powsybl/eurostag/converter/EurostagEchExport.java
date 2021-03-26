@@ -555,8 +555,8 @@ public class EurostagEchExport implements EurostagEchExporter {
             esgNetwork.addDetailedTwoWindingTransformer(esgTransfo);
         }
 
-        for (ThreeWindingsTransformer twt : network.getThreeWindingsTransformers()) {
-            throw new AssertionError("TODO");
+        if (network.getThreeWindingsTransformerCount() > 0) {
+            throw new UnsupportedOperationException("Three windings transformers are not supported yet");
         }
     }
 

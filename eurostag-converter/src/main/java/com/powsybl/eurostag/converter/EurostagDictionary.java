@@ -122,9 +122,9 @@ public final class EurostagDictionary {
                     parallelIndexes.getParallelIndex(twt.getId())).toString());
         }
 
-        for (ThreeWindingsTransformer twt : Identifiables.sort(network.getThreeWindingsTransformers())) {
-            LOGGER.error("NOT YET IMPLEMENTED");
-            throw new AssertionError("TODO");
+        // TODO(mathbagu): Add support for Three windings transformers
+        if (network.getThreeWindingsTransformerCount() > 0) {
+            throw new UnsupportedOperationException("Three windings transformers are not supported yet");
         }
 
         return dictionary;

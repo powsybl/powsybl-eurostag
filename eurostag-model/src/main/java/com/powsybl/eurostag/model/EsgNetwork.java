@@ -179,16 +179,16 @@ public class EsgNetwork {
         for (Map.Entry<Esg8charName, Collection<EsgDetailedTwoWindingTransformer>> e : transformersByRegulatedNode.asMap().entrySet()) {
             Esg8charName regulatedNode = e.getKey();
             Collection<EsgDetailedTwoWindingTransformer> transformers = e.getValue();
-            Set<Double> targetVoltageSet = transformers.stream()
-                    .map(EsgDetailedTwoWindingTransformer::getVoltr)
-                    .collect(Collectors.toSet());
-            if (targetVoltageSet.size() > 1) {
-                double chosenTargetVoltage = targetVoltageSet.stream().min(Double::compare).get();
-                LOGGER.warn("Fix target voltage of transformers {} connected to same regulating bus {}: {} -> {}",
+
+            OptionalDouble chosenTargetVoltage = transformers.stream()
+                    .mapToDouble(EsgDetailedTwoWindingTransformer::getVoltr)
+                    .min();
+            if (chosenTargetVoltage.isPresent()) {
+                LOGGER.warn("Fix target voltage of transformers {} connected to same regulating bus {} to {} kV",
                         transformers.stream().map(EsgDetailedTwoWindingTransformer::getName).collect(Collectors.toList()),
-                        regulatedNode, targetVoltageSet, chosenTargetVoltage);
+                        regulatedNode, chosenTargetVoltage.getAsDouble());
                 for (EsgDetailedTwoWindingTransformer transformer : transformers) {
-                    transformer.setVoltr(chosenTargetVoltage);
+                    transformer.setVoltr(chosenTargetVoltage.getAsDouble());
                 }
             }
         }
