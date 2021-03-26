@@ -70,7 +70,7 @@ public class DicoEurostagNamingStrategy implements EurostagNamingStrategy {
                 String iidmId = row.get(0).trim();
                 String esgId = row.get(1).trim();
                 if (esgId.length() > NameType.GENERATOR.getLength()) {
-                    LOGGER.warn("Skipping mapping iidmId: {}, esgId: {}. esgId's length > {}. Line {} in {}", iidmId, esgId, NameType.GENERATOR.getLength(), count, dicoFile.toString());
+                    LOGGER.warn("Skipping mapping iidmId: {}, esgId: {}. esgId's length > {}. Line {} in {}", iidmId, esgId, NameType.GENERATOR.getLength(), count, dicoFile);
                     continue;
                 }
                 if ("".equals(iidmId) || "".equals(esgId)) {

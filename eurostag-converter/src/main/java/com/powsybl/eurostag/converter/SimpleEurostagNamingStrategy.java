@@ -60,6 +60,7 @@ public class SimpleEurostagNamingStrategy implements EurostagNamingStrategy {
 
     private static String createIndexedName(char code, long index, int maxSize) {
         int number = maxSize - 1;
-        return String.format("%s%0" + number + "d", code, index);
+        String pattern = "%s%0" + number + "d";
+        return String.format(pattern, code, index);
     }
 }

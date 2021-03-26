@@ -203,7 +203,6 @@ public final class EurostagDictionary {
                 add(tokens[0], tokens[1]);
             }
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
             throw new EsgException(e);
         }
     }
@@ -215,7 +214,6 @@ public final class EurostagDictionary {
                 os.newLine();
             }
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
             throw new EsgException(e);
         }
     }

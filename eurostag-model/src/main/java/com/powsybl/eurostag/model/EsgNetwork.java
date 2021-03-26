@@ -20,11 +20,33 @@ import java.util.stream.Collectors;
  */
 public class EsgNetwork {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EsgNetwork.class);
-
     public static final String VERSION = "5.1";
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EsgNetwork.class);
+
     private static final float MIN_REACTIVE_RANGE = 1f;
+
+    private static final String UNKNOWN_REFERENCE_MESSAGE = "%s '%s' reference an unknown %s '%s'";
+    private static final String ALREADY_EXISTS_MESSAGE = "%s '%s' already exists";
+    private static final String DOES_NOT_EXIST_MESSAGE = "%s '%s' doesn't exist";
+
+    private static final String AREA = "Area";
+    private static final String COUPLING_DEVICE = "Coupling device";
+    private static final String DC_LINK = "DC link";
+    private static final String DC_NODE = "DC node";
+    private static final String DETAILED_TWT = "Detailed two windings transformer";
+    private static final String DISSYMMETRICAL_BRANCH = "Dissymmetrical branch";
+    private static final String GENERATOR = "Generator";
+    private static final String LINE = "Line";
+    private static final String LOAD = "Load";
+    private static final String NODE = "Node";
+    private static final String SHUNT = "Capacitor or reactor bank";
+    private static final String STATIC_VAR_COMPENSATOR = "Static VAR compensator";
+    private static final String TRANSFORMER = "Transformer";
+    private static final String VSC_CONVERTER_STATION = "VSC converter station";
+
+    private static final String CONNECTION_NODE = "connection node";
+    private static final String REGULATING_NODE = "regulating node";
 
     private final Map<String, EsgArea> areas = new LinkedHashMap<>();
     private final Map<String, EsgNode> nodes = new LinkedHashMap<>();
@@ -42,10 +64,10 @@ public class EsgNetwork {
 
     private void checkBranchName(EsgBranchName name) {
         if (getNode(name.getNode1Name().toString()) == null) {
-            throw new EsgException("Line '" + name + "' reference an unknown connection node '" + name.getNode1Name() + "'");
+            throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, LINE, name, CONNECTION_NODE, name.getNode1Name()));
         }
         if (getNode(name.getNode2Name().toString()) == null) {
-            throw new EsgException("Line '" + name + "' reference an unknown connection node '" + name.getNode2Name() + "'");
+            throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, LINE, name, CONNECTION_NODE, name.getNode2Name()));
         }
     }
 
@@ -65,7 +87,7 @@ public class EsgNetwork {
         }
         for (EsgNode node :  getNodes()) {
             if (getArea(node.getArea().toString()) == null) {
-                throw new EsgException("Node '" + node.getName() + "' reference an unknown area '" + node.getArea() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, NODE, node.getName(), "area", node.getArea()));
             }
         }
         for (EsgLine line : getLines()) {
@@ -80,36 +102,30 @@ public class EsgNetwork {
         for (EsgDetailedTwoWindingTransformer transformer : getDetailedTwoWindingTransformers()) {
             checkBranchName(transformer.getName());
             if (transformer.getZbusr() != null && getNode(transformer.getZbusr().toString()) == null) {
-                throw new EsgException("Transformer '" + transformer.getName() +  "' reference an unknown regulating node '"
-                        + transformer.getZbusr() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, TRANSFORMER, transformer.getName(), REGULATING_NODE, transformer.getZbusr()));
             }
         }
         for (EsgLoad load : getLoads()) {
             if (getNode(load.getZnodlo().toString()) == null) {
-                throw new EsgException("Load '" + load.getZnamlo() + "' reference an unknown connection node '"
-                        + load.getZnodlo() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, LOAD, load.getZnamlo(), CONNECTION_NODE, load.getZnodlo()));
             }
         }
         for (EsgGenerator generator : getGenerators()) {
             if (getNode(generator.getZnodge().toString()) == null) {
-                throw new EsgException("Generator '" + generator.getZnamge() + "' reference an unknown connection node '"
-                        + generator.getZnodge() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, GENERATOR, generator.getZnamge(), CONNECTION_NODE, generator.getZnodge()));
             }
             if (getNode(generator.getZregnoge().toString()) == null) {
-                throw new EsgException("Generator '" + generator.getZnamge() + "' reference an unknown regulating node '"
-                        + generator.getZregnoge() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, GENERATOR, generator.getZnamge(), REGULATING_NODE, generator.getZregnoge()));
             }
         }
         for (EsgCapacitorOrReactorBank bank : getCapacitorOrReactorBanks()) {
             if (getNode(bank.getZnodba().toString()) == null) {
-                throw new EsgException("Capacitor or reactor bank '" + bank.getZnamba() + "' reference an unknown connection node '"
-                        + bank.getZnodba() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, SHUNT, bank.getZnamba(), CONNECTION_NODE, bank.getZnodba()));
             }
         }
         for (EsgStaticVarCompensator svc : getStaticVarCompensators()) {
             if (getNode(svc.getZnodsvc().toString()) == null) {
-                throw new EsgException("Static VAR compensator '" + svc.getZnamsvc() + "' reference an unknown connection node '"
-                        + svc.getZnodsvc() + "'");
+                throw new EsgException(String.format(UNKNOWN_REFERENCE_MESSAGE, STATIC_VAR_COMPENSATOR, svc.getZnamsvc(), CONNECTION_NODE, svc.getZnodsvc()));
             }
         }
 
@@ -136,20 +152,20 @@ public class EsgNetwork {
         }
         for (Map.Entry<String, Collection<EsgGenerator>> e : generatorsConnectedToSameNode.asMap().entrySet()) {
             String nodeName = e.getKey();
-            Collection<EsgGenerator> generators = e.getValue();
-            Set<Double> targetVoltageSet = generators.stream()
+            Collection<EsgGenerator> gens = e.getValue();
+            Set<Double> targetVoltageSet = gens.stream()
                     .map(EsgGenerator::getVregge)
                     .collect(Collectors.toSet());
             if (targetVoltageSet.size() > 1) {
-                Collection<EsgGenerator> connectedGenerators = generators.stream()
+                Collection<EsgGenerator> connectedGenerators = gens.stream()
                         .filter(g -> g.getXgenest() == EsgConnectionStatus.CONNECTED)
                         .collect(Collectors.toList());
                 targetVoltageSet = connectedGenerators.stream()
                         .map(EsgGenerator::getVregge)
                         .collect(Collectors.toSet());
-                if (targetVoltageSet.size() > 0) {
+                if (!targetVoltageSet.isEmpty()) {
                     if (targetVoltageSet.size() == 1) {
-                        Collection<EsgGenerator> diconnectedGenerators = generators.stream()
+                        Collection<EsgGenerator> diconnectedGenerators = gens.stream()
                                 .filter(g -> g.getXgenest() == EsgConnectionStatus.NOT_CONNECTED)
                                 .collect(Collectors.toList());
                         LOGGER.warn("Fix target voltage of disconnected generators {} to be consistent with target voltage ({} Kv) of other generators connected to the same node ({})",
@@ -204,14 +220,14 @@ public class EsgNetwork {
 
     public void addArea(EsgArea area) {
         if (areas.containsKey(area.getName().toString())) {
-            throw new IllegalArgumentException("Area '" + area.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, AREA, area.getName()));
         }
         areas.put(area.getName().toString(), area);
     }
 
     public void removeArea(String area) {
         if (!areas.containsKey(area)) {
-            throw new IllegalArgumentException("Area '" + area + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, AREA, area));
         }
         areas.remove(area);
     }
@@ -226,14 +242,14 @@ public class EsgNetwork {
 
     public void addNode(EsgNode node) {
         if (nodes.containsKey(node.getName().toString())) {
-            throw new IllegalArgumentException("Node '" + node.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, NODE, node.getName()));
         }
         nodes.put(node.getName().toString(), node);
     }
 
     public void removeNode(String node) {
         if (!nodes.containsKey(node)) {
-            throw new IllegalArgumentException("Node '" + node + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, NODE, node));
         }
         nodes.remove(node);
     }
@@ -248,14 +264,14 @@ public class EsgNetwork {
 
     public void addLine(EsgLine line) {
         if (lines.containsKey(line.getName().toString())) {
-            throw new IllegalArgumentException("Line '" + line.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, LINE, line.getName()));
         }
         lines.put(line.getName().toString(), line);
     }
 
     public void removeLine(String line) {
         if (!lines.containsKey(line)) {
-            throw new IllegalArgumentException("Line '" + line + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, LINE, line));
         }
         lines.remove(line);
     }
@@ -270,14 +286,14 @@ public class EsgNetwork {
 
     public void addDetailedTwoWindingTransformer(EsgDetailedTwoWindingTransformer transformer) {
         if (detailedTwoWindingTransformers.containsKey(transformer.getName().toString())) {
-            throw new IllegalArgumentException("Detailed 2 winding transformer '" + transformer.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, DETAILED_TWT, transformer));
         }
         detailedTwoWindingTransformers.put(transformer.getName().toString(), transformer);
     }
 
     public void removeDetailedTwoWindingTransformer(String transformer) {
         if (!detailedTwoWindingTransformers.containsKey(transformer)) {
-            throw new IllegalArgumentException("Detailed 2 winding transformer '" + transformer + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, DETAILED_TWT, transformer));
         }
         detailedTwoWindingTransformers.remove(transformer);
     }
@@ -292,14 +308,14 @@ public class EsgNetwork {
 
     public void addDissymmetricalBranch(EsgDissymmetricalBranch branch) {
         if (dissymmetricalBranches.containsKey(branch.getName().toString())) {
-            throw new IllegalArgumentException("Dissymmetrical branch '" + branch.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, DISSYMMETRICAL_BRANCH, branch));
         }
         dissymmetricalBranches.put(branch.getName().toString(), branch);
     }
 
     public void removeDissymmetricalBranch(String branch) {
         if (!dissymmetricalBranches.containsKey(branch)) {
-            throw new IllegalArgumentException("Dissymmetrical branch '" + branch + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, DISSYMMETRICAL_BRANCH, branch));
         }
         dissymmetricalBranches.remove(branch);
     }
@@ -314,14 +330,14 @@ public class EsgNetwork {
 
     public void addCouplingDevice(EsgCouplingDevice device) {
         if (couplingDevices.containsKey(device.getName().toString())) {
-            throw new IllegalArgumentException("Coupling device '" + device.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, COUPLING_DEVICE, device));
         }
         couplingDevices.put(device.getName().toString(), device);
     }
 
     public void removeCouplingDevice(String device) {
         if (!couplingDevices.containsKey(device)) {
-            throw new IllegalArgumentException("Coupling device '" + device + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, COUPLING_DEVICE, device));
         }
         couplingDevices.remove(device);
     }
@@ -336,14 +352,14 @@ public class EsgNetwork {
 
     public void addGenerator(EsgGenerator generator) {
         if (generators.containsKey(generator.getZnamge().toString())) {
-            throw new IllegalArgumentException("Generator '" + generator.getZnamge() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, GENERATOR, generator.getZnamge()));
         }
         generators.put(generator.getZnamge().toString(), generator);
     }
 
     public void removeGenerator(String generator) {
         if (!generators.containsKey(generator)) {
-            throw new IllegalArgumentException("Generator '" + generator + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, GENERATOR, generator));
         }
         generators.remove(generator);
     }
@@ -358,14 +374,14 @@ public class EsgNetwork {
 
     public void addLoad(EsgLoad load) {
         if (loads.containsKey(load.getZnamlo().toString())) {
-            throw new IllegalArgumentException("Load '" + load.getZnamlo() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, LOAD, load.getZnamlo()));
         }
         loads.put(load.getZnamlo().toString(), load);
     }
 
     public void removeLoad(String load) {
         if (!loads.containsKey(load)) {
-            throw new IllegalArgumentException("Load '" + load + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, LOAD, load));
         }
         loads.remove(load);
     }
@@ -380,14 +396,14 @@ public class EsgNetwork {
 
     public void addCapacitorsOrReactorBanks(EsgCapacitorOrReactorBank bank) {
         if (capacitorsOrReactorBanks.containsKey(bank.getZnamba().toString())) {
-            throw new IllegalArgumentException("Capacitor or reactor bank '" + bank.getZnamba() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, SHUNT, bank.getZnamba()));
         }
         capacitorsOrReactorBanks.put(bank.getZnamba().toString(), bank);
     }
 
     public void removeCapacitorsOrReactorBanks(String bank) {
         if (!capacitorsOrReactorBanks.containsKey(bank)) {
-            throw new IllegalArgumentException("Capacitor or reactor bank '" + bank + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, SHUNT, bank));
         }
         capacitorsOrReactorBanks.remove(bank);
     }
@@ -398,7 +414,7 @@ public class EsgNetwork {
 
     public void addStaticVarCompensator(EsgStaticVarCompensator svc) {
         if (staticVarCompensators.containsKey(svc.getZnamsvc().toString())) {
-            throw new IllegalArgumentException("Static VAR compensator '" + svc + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, STATIC_VAR_COMPENSATOR, svc.getZnamsvc()));
         }
         staticVarCompensators.put(svc.getZnamsvc().toString(), svc);
     }
@@ -413,14 +429,14 @@ public class EsgNetwork {
 
     public void addDCNode(EsgDCNode node) {
         if (dcNodes.containsKey(node.getName().toString())) {
-            throw new IllegalArgumentException("DC node '" + node.getName() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, DC_NODE, node.getName()));
         }
         dcNodes.put(node.getName().toString(), node);
     }
 
     public void removeDCNode(String node) {
         if (!dcNodes.containsKey(node)) {
-            throw new IllegalArgumentException("DC node '" + node + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, DC_NODE, node));
         }
         dcNodes.remove(node);
     }
@@ -435,14 +451,14 @@ public class EsgNetwork {
 
     public void addDCLink(EsgDCLink dclink) {
         if (dcLinks.containsKey(dclink.toString())) {
-            throw new IllegalArgumentException("DC Link '" + dcLinks.toString() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, DC_LINK, dclink.toString()));
         }
         dcLinks.put(dclink.toString(), dclink);
     }
 
     public void removeDCLink(String dcLinkStr) {
         if (!lines.containsKey(dcLinkStr)) {
-            throw new IllegalArgumentException("DC Link '" + dcLinkStr + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, DC_LINK, dcLinkStr));
         }
         dcLinks.remove(dcLinkStr);
     }
@@ -457,14 +473,14 @@ public class EsgNetwork {
 
     public void addAcdcVscConverter(EsgAcdcVscConverter vscConverter) {
         if (vscConverters.containsKey(vscConverter.getZnconv().toString())) {
-            throw new IllegalArgumentException("ACDCVscConverter '" + vscConverter.getZnconv() + "' already exists");
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, VSC_CONVERTER_STATION, vscConverter.getZnconv()));
         }
         vscConverters.put(vscConverter.getZnconv().toString(), vscConverter);
     }
 
     public void removeAcdcVscConverter(String name) {
         if (!vscConverters.containsKey(name)) {
-            throw new IllegalArgumentException("ACDCVscConverter '" + name + "' doesn't exists");
+            throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, VSC_CONVERTER_STATION, name));
         }
         vscConverters.remove(name);
     }
