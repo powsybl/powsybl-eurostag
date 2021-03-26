@@ -23,24 +23,32 @@ import java.nio.file.Path;
  */
 public class EurostagTest extends AbstractConverterTest {
 
-    @Test
-    public void test() throws IOException {
-        EsgNetwork network = EurostagFactory.create();
-
-        Path actualPath = fileSystem.getPath("eurostag.ech");
+    private void test(EsgNetwork network, String name, String date, String resource) throws IOException {
+        Path actualPath = fileSystem.getPath(resource);
 
         EsgGeneralParameters parameters = new EsgGeneralParameters();
-        parameters.setEditDate(LocalDate.parse("2016-03-01"));
+        parameters.setEditDate(LocalDate.parse(date));
 
         EsgWriter esgWriter = new EsgWriter(network, parameters, new EsgSpecialParameters());
         try (Writer writer = Files.newBufferedWriter(actualPath, StandardCharsets.UTF_8)) {
-            esgWriter.write(writer, "sim1/InitialState");
+            esgWriter.write(writer, name);
         }
 
         try (InputStream actual = Files.newInputStream(actualPath)) {
-            compareTxt(getClass().getResourceAsStream("/eurostag-tutorial-example1.ech"), actual);
+            compareTxt(getClass().getResourceAsStream("/" + resource), actual);
         }
+    }
 
+    @Test
+    public void test() throws IOException {
+        EsgNetwork network = EurostagFactory.create();
+        test(network, "sim1/InitialState", "2016-03-01", "eurostag-tutorial-example1.ech");
+    }
+
+    @Test
+    public void testHvdc() throws IOException {
+        EsgNetwork network = EurostagFactory.createHvdc();
+        test(network, "hvdctest/InitialState", "2016-01-01", "eurostag-hvdc-test.ech");
     }
 
 }
