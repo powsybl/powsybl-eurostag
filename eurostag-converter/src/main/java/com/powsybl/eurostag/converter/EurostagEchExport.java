@@ -560,6 +560,7 @@ public class EurostagEchExport implements EurostagEchExporter {
         }
 
         if (network.getThreeWindingsTransformerCount() > 0) {
+            //TODO
             throw new UnsupportedOperationException("Three windings transformers are not supported yet");
         }
     }
@@ -625,7 +626,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             EsgRegulatingMode mode = (isQminQmaxInverted && !Double.isNaN(qgen)) ? EsgRegulatingMode.NOT_REGULATING :
                     (isVoltageRegulatorOn && g.getTargetV() >= 0.1 ? EsgRegulatingMode.REGULATING : EsgRegulatingMode.NOT_REGULATING);
             double vregge = (isQminQmaxInverted && !Double.isNaN(qgen)) ? Double.NaN : (isVoltageRegulatorOn ? g.getTargetV() : Double.NaN);
-            float qgensh = 1.f;
+            float qgensh = 1.f; //TODO: use extension CoordinatedReactiveControl
 
             //fails, when noSwitch is true !!
             //Bus regulatingBus = g.getRegulatingTerminal().getBusBreakerView().getConnectableBus();
@@ -701,7 +702,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             double bmax = (!config.isSvcAsFixedInjectionInLF()) ? svc.getBmax() * factor : 9999999; // [Mvar]
             EsgRegulatingMode xregsvc = ((svc.getRegulationMode() == StaticVarCompensator.RegulationMode.VOLTAGE) && (!config.isSvcAsFixedInjectionInLF())) ? EsgRegulatingMode.REGULATING : EsgRegulatingMode.NOT_REGULATING;
             double vregsvc = svc.getVoltageSetpoint();
-            double qsvsch = 1.0;
+            double qsvsch = 1.0; //TODO: use extension CoordinatedReactiveControl
             esgNetwork.addStaticVarCompensator(
                     new EsgStaticVarCompensator(znamsvc, xsvcst, znodsvc, bmin, binit, bmax, xregsvc, vregsvc, qsvsch));
         }
@@ -817,8 +818,7 @@ public class EurostagEchExport implements EurostagEchExporter {
 
     protected double computeLosses(HvdcLine hvdcLine, HvdcConverterStation<?> convStation, double activeSetPoint) {
         double cableLossesEnd = EchUtil.isPMode(convStation, hvdcLine) ? 0.0 : 1.0;
-        //Eurostag model requires a fixed resistance of 1 ohm at 640 kV quivalent to 0.25 ohm at 320 kV
-        // FIXME(mathbagu): lossFactor convention changed in IIDM, check if this formula is correct
+        //Eurostag model requires a fixed resistance of 1 ohm at 640 kV equivalent to 0.25 ohm at 320 kV
         return Math.abs(activeSetPoint * convStation.getLossFactor() / 100.0) + cableLossesEnd * (hvdcLine.getR() - 0.25) * Math.pow(activeSetPoint / hvdcLine.getNominalV(), 2);
     }
 

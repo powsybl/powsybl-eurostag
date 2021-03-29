@@ -18,12 +18,12 @@ public class EsgLoad {
     private final EsgConnectionStatus iloadst; // Status (' ' -> connected, '-' -> not connected)
 
     private final Esg8charName znodlo; // connection node name
-    private final double pldsti; // active load [MW]
-    private final double pldstz; // active load [MW]
-    private final double pldstp; // active load [MW]
-    private final double qldsti; // reactive load [Mvar]
-    private final double qldstz; // reactive load [Mvar]
-    private final double qldstp; // reactive load [Mvar]
+    private final double pldsti; // active load modeled as constant impedance [MW]
+    private final double pldstz; // active load modeled as constant current [MW]
+    private final double pldstp; // active load modeled as constant power [MW]
+    private final double qldsti; // reactive load modeled as constant impedance [Mvar]
+    private final double qldstz; // reactive load modeled as constant current [Mvar]
+    private final double qldstp; // reactive load modeled as constant power [Mvar]
 
     public EsgLoad(EsgConnectionStatus iloadst, Esg8charName znamlo, Esg8charName znodlo, double pldsti, double pldstz, double pldstp, double qldsti, double qldstz, double qldstp) {
         this.iloadst = Objects.requireNonNull(iloadst);
