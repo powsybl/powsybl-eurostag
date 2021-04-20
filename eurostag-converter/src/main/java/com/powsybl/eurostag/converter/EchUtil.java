@@ -141,7 +141,7 @@ public final class EchUtil {
     /**
      * Automatically find the best slack bus list
      */
-    public static Bus selectSlackbus(Network network, EurostagEchExportConfig config) {
+    public static Map<Integer, Bus> selectSlackbus(Network network, EurostagEchExportConfig config) {
         // avoid buses connected to a switch because of Eurostag LF crash (LU factorisation issue)
         Set<String> busesToAvoid = new HashSet<>();
         for (VoltageLevel vl : network.getVoltageLevels()) {
@@ -150,25 +150,33 @@ public final class EchUtil {
                 busesToAvoid.add(EchUtil.getBus2(vl, s.getId(), config).getId());
             }
         }
-        Bus bus = selectSlackbusCriteria1(network, config, busesToAvoid);
-        if (bus == null) {
-            bus = selectSlackbusCriteria1(network, config, Collections.emptySet());
+        Map<Integer, Bus> buses = selectSlackbusCriteria1(network, config, busesToAvoid);
+        if (buses.isEmpty()) {
+            buses = selectSlackbusCriteria1(network, config, Collections.emptySet());
         }
-        return bus;
+        return buses;
     }
 
-    private static Bus selectSlackbusCriteria1(Network network, EurostagEchExportConfig config, Set<String> busesToAvoid) {
-        return StreamSupport.stream(EchUtil.getBuses(network, config).spliterator(), false)
-                .sorted(Comparator.comparing(Identifiable::getId))
-                .filter(b -> !busesToAvoid.contains(b.getId())
-                        && b.getConnectedComponent() != null && b.getConnectedComponent().getNum() == ComponentConstants.MAIN_NUM)
-                 .map(EchUtil::decorate)
-                 .filter(db -> db.regulatingGenerator > 0 && db.maxP > 100) // only keep bus with a regulating generator and a pmax > 100 MW
-                 .sorted((db1, db2) -> Float.compare((db1.maxP - db1.minP) / 2 - db1.targetP, (db2.maxP - db2.minP) / 2 - db2.targetP)) // select first bus with a high margin
-                 .limit(1)
-                .map(f -> f.bus)
-                .findFirst()
-                .orElse(null);
+    private static Map<Integer, Bus> selectSlackbusCriteria1(Network network, EurostagEchExportConfig config, Set<String> busesToAvoid) {
+        Map<Integer, Bus> slackBuses =  new HashMap<>();
+        int[] synchronousComponents = network.getBusView().getBusStream().mapToInt(bus -> bus.getSynchronousComponent().getNum()).distinct().toArray();
+        for (int synchronousComponentNumber : synchronousComponents) {
+            Bus bus = StreamSupport.stream(EchUtil.getBuses(network, config).spliterator(), false)
+                    .sorted(Comparator.comparing(Identifiable::getId))
+                    .filter(b -> !busesToAvoid.contains(b.getId())
+                            && b.getConnectedComponent() != null && b.getSynchronousComponent().getNum() == synchronousComponentNumber)
+                    .map(EchUtil::decorate)
+                    .filter(db -> db.regulatingGenerator > 0 && db.maxP > 100) // only keep bus with a regulating generator and a pmax > 100 MW
+                    .sorted((db1, db2) -> Float.compare((db1.maxP - db1.minP) / 2 - db1.targetP, (db2.maxP - db2.minP) / 2 - db2.targetP)) // select first bus with a high margin
+                    .limit(1)
+                    .map(f -> f.bus)
+                    .findFirst()
+                    .orElse(null);
+            if (bus != null) {
+                slackBuses.put(synchronousComponentNumber, bus);
+            }
+        }
+        return slackBuses;
     }
 
     public static boolean isInMainCc(Bus bus) {

@@ -11,6 +11,7 @@ import com.google.common.base.Strings;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.eurostag.model.*;
 import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.util.Identifiables;
 import com.powsybl.eurostag.model.io.EsgWriter;
 import org.slf4j.Logger;
@@ -105,18 +106,20 @@ public class EurostagEchExport implements EurostagEchExporter {
             esgNetwork.addNode(createNode(esgId, EchUtil.FAKE_AREA, nominalV, nominalV, 0f, false));
         });
 
-        Bus sb = EchUtil.selectSlackbus(network, config);
-        if (sb == null) {
+        Map<Integer, Bus> sbs = EchUtil.selectSlackbus(network, config);
+        if (sbs == null) {
             throw new EsgException("Slack bus not found");
         }
-        LOGGER.debug("Slack bus: {} ({})", sb, sb.getVoltageLevel().getId());
+        for (Bus sb : sbs.values()) {
+            LOGGER.debug("Slack bus: {} ({})", sb, sb.getVoltageLevel().getId());
+        }
         for (Bus b : Identifiables.sort(EchUtil.getBuses(network, config))) {
             // skip buses not in the main connected component
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(b)) {
                 LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "Bus", b.getId());
                 continue;
             }
-            esgNetwork.addNode(createNode(b.getId(), b.getVoltageLevel(), b.getV(), b.getAngle(), sb == b));
+            esgNetwork.addNode(createNode(b.getId(), b.getVoltageLevel(), b.getV(), b.getAngle(), sbs.values().contains(b)));
         }
         for (DanglingLine dl : Identifiables.sort(network.getDanglingLines())) {
             // skip DLs not in the main connected component
@@ -626,7 +629,10 @@ public class EurostagEchExport implements EurostagEchExporter {
             EsgRegulatingMode mode = (isQminQmaxInverted && !Double.isNaN(qgen)) ? EsgRegulatingMode.NOT_REGULATING :
                     (isVoltageRegulatorOn && g.getTargetV() >= 0.1 ? EsgRegulatingMode.REGULATING : EsgRegulatingMode.NOT_REGULATING);
             double vregge = (isQminQmaxInverted && !Double.isNaN(qgen)) ? Double.NaN : (isVoltageRegulatorOn ? g.getTargetV() : Double.NaN);
-            float qgensh = 1.f; //TODO: use extension CoordinatedReactiveControl
+            float qgensh = 1.f;
+            if (g.getExtension(CoordinatedReactiveControl.class) != null) {
+                qgensh = (float) (g.getExtension(CoordinatedReactiveControl.class).getQPercent() / 100.);
+            }
 
             //fails, when noSwitch is true !!
             //Bus regulatingBus = g.getRegulatingTerminal().getBusBreakerView().getConnectableBus();
@@ -702,7 +708,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             double bmax = (!config.isSvcAsFixedInjectionInLF()) ? svc.getBmax() * factor : 9999999; // [Mvar]
             EsgRegulatingMode xregsvc = ((svc.getRegulationMode() == StaticVarCompensator.RegulationMode.VOLTAGE) && (!config.isSvcAsFixedInjectionInLF())) ? EsgRegulatingMode.REGULATING : EsgRegulatingMode.NOT_REGULATING;
             double vregsvc = svc.getVoltageSetpoint();
-            double qsvsch = 1.0; //TODO: use extension CoordinatedReactiveControl
+            double qsvsch = 1.0; //TODO: extend CoordinatedReactiveControl to static var compensator.
             esgNetwork.addStaticVarCompensator(
                     new EsgStaticVarCompensator(znamsvc, xsvcst, znodsvc, bmin, binit, bmax, xregsvc, vregsvc, qsvsch));
         }
