@@ -85,11 +85,6 @@
                 <version>${powsyblcore.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.powsybl</groupId>
-                <artifactId>powsybl-iidm-extensions</artifactId>
-                <version>${powsyblcore.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>${jodatime.version}</version>
