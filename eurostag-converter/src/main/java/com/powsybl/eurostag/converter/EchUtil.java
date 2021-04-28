@@ -159,12 +159,14 @@ public final class EchUtil {
 
     private static Map<Integer, Bus> selectSlackbusCriteria1(Network network, EurostagEchExportConfig config, Set<String> busesToAvoid) {
         Map<Integer, Bus> slackBuses =  new HashMap<>();
+
+        // FIXME(mathbagu): when Network.BusView.getSynchronousComponents() will be available, refactor this algorithm
         int[] synchronousComponents = network.getBusView().getBusStream().mapToInt(bus -> bus.getSynchronousComponent().getNum()).distinct().toArray();
         for (int synchronousComponentNumber : synchronousComponents) {
             Bus bus = StreamSupport.stream(EchUtil.getBuses(network, config).spliterator(), false)
                     .sorted(Comparator.comparing(Identifiable::getId))
-                    .filter(b -> !busesToAvoid.contains(b.getId())
-                            && b.getConnectedComponent() != null && b.getSynchronousComponent().getNum() == synchronousComponentNumber)
+                    .filter(b -> !busesToAvoid.contains(b.getId()))
+                    .filter(b -> b.getSynchronousComponent() != null && b.getSynchronousComponent().getNum() == synchronousComponentNumber)
                     .map(EchUtil::decorate)
                     .filter(db -> db.regulatingGenerator > 0 && db.maxP > 100) // only keep bus with a regulating generator and a pmax > 100 MW
                     .sorted((db1, db2) -> Float.compare((db1.maxP - db1.minP) / 2 - db1.targetP, (db2.maxP - db2.minP) / 2 - db2.targetP)) // select first bus with a high margin
