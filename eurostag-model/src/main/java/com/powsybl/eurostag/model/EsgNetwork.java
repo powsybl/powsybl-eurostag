@@ -35,6 +35,7 @@ public class EsgNetwork {
     private static final String DC_LINK = "DC link";
     private static final String DC_NODE = "DC node";
     private static final String DETAILED_TWT = "Detailed two windings transformer";
+    private static final String T3WT = "Three windings transformer";
     private static final String DISSYMMETRICAL_BRANCH = "Dissymmetrical branch";
     private static final String GENERATOR = "Generator";
     private static final String LINE = "Line";
@@ -52,6 +53,7 @@ public class EsgNetwork {
     private final Map<String, EsgNode> nodes = new LinkedHashMap<>();
     private final Map<String, EsgLine> lines = new LinkedHashMap<>();
     private final Map<String, EsgDetailedTwoWindingTransformer> detailedTwoWindingTransformers = new LinkedHashMap<>();
+    private final Map<String, EsgThreeWindingTransformer> threeWindingTransformers = new LinkedHashMap<>();
     private final Map<String, EsgDissymmetricalBranch> dissymmetricalBranches = new LinkedHashMap<>();
     private final Map<String, EsgCouplingDevice> couplingDevices = new LinkedHashMap<>();
     private final Map<String, EsgGenerator> generators = new LinkedHashMap<>();
@@ -296,6 +298,17 @@ public class EsgNetwork {
             throw new IllegalArgumentException(String.format(DOES_NOT_EXIST_MESSAGE, DETAILED_TWT, transformer));
         }
         detailedTwoWindingTransformers.remove(transformer);
+    }
+
+    public void addThreeWindingTransformer(EsgThreeWindingTransformer t3wTransformer) {
+        if (threeWindingTransformers.containsKey(t3wTransformer.getName().toString())) {
+            throw new IllegalArgumentException(String.format(ALREADY_EXISTS_MESSAGE, T3WT, t3wTransformer));
+        }
+        threeWindingTransformers.put(t3wTransformer.getName().toString(), t3wTransformer);
+    }
+
+    public Collection<EsgThreeWindingTransformer> getThreeWindingTransformers() {
+        return threeWindingTransformers.values();
     }
 
     public Collection<EsgDissymmetricalBranch> getDissymmetricalBranches() {

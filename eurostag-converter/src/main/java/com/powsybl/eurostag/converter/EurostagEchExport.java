@@ -562,9 +562,324 @@ public class EurostagEchExport implements EurostagEchExporter {
             esgNetwork.addDetailedTwoWindingTransformer(esgTransfo);
         }
 
-        if (network.getThreeWindingsTransformerCount() > 0) {
-            //TODO
-            throw new UnsupportedOperationException("Three windings transformers are not supported yet");
+        for (ThreeWindingsTransformer t3wt : Identifiables.sort(network.getThreeWindingsTransformers())) {
+            //TODO: skip transformers not in the main connected component
+            /*
+            if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(t3wt, config.isNoSwitch())) {
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "TwoWindingsTransformer", t3wt.getId());
+                continue;
+            }*/
+
+            ConnectionBus bus1 = ConnectionBus.fromTerminal(t3wt.getLeg1().getTerminal(), config, fakeNodes);
+            ConnectionBus bus2 = ConnectionBus.fromTerminal(t3wt.getLeg2().getTerminal(), config, fakeNodes);
+            ConnectionBus bus3 = ConnectionBus.fromTerminal(t3wt.getLeg3().getTerminal(), config, fakeNodes);
+            //do not export the Transformer if bus1==bus2
+            if (EchUtil.isSameConnectionBus(bus1, bus2)) {
+                LOGGER.warn("skipping Transformer: {};  bus1 is equal to bus2: {}", t3wt, bus1 != null ? bus1.getId() : bus1);
+                continue;
+            }
+            if (EchUtil.isSameConnectionBus(bus1, bus3)) {
+                LOGGER.warn("skipping Transformer: {};  bus1 is equal to bus3: {}", t3wt, bus1 != null ? bus1.getId() : bus1);
+                continue;
+            }
+            if (EchUtil.isSameConnectionBus(bus2, bus3)) {
+                LOGGER.warn("skipping Transformer: {};  bus2 is equal to bus3: {}", t3wt, bus2 != null ? bus2.getId() : bus2);
+                continue;
+            }
+
+            //TODO: Status
+            //EsgBranchConnectionStatus status = getStatus(bus1, bus2);
+
+            //...IIDM gives no rate value. we take rate = 100 MVA But we have to find the corresponding pcu, pfer ...
+            float rate = 100.f;
+
+            //**************************
+            //*** LOSSES COMPUTATION *** (Record 1)
+            //**************************
+
+            double nomiU1 = t3wt.getLeg1().getTerminal().getVoltageLevel().getNominalV();
+            double nomiU2 = t3wt.getLeg2().getTerminal().getVoltageLevel().getNominalV();
+            double nomiU3 = t3wt.getLeg3().getTerminal().getVoltageLevel().getNominalV();
+            double nomiU0 = t3wt.getRatedU0(); // TODO : check OK
+
+            double sNom1 = rate;
+            double sNom2 = rate;
+            double sNom3 = rate;
+
+            //Leg1 pu values in [p.u.] (base Snom1, nomiU0)
+            double r1pu = t3wt.getLeg1().getR() * sNom1 / nomiU0 / nomiU0; //pu in [sNom1, nomiU0]
+            double x1pu = t3wt.getLeg1().getX() * sNom1 / nomiU0 / nomiU0; //pu in [sNom1, nomiU0]
+            double g1 = config.isSpecificCompatibility() ? t3wt.getLeg1().getG() / parameters.getSnref() / 2.0 : t3wt.getLeg1().getG();
+            double b1 = config.isSpecificCompatibility() ? t3wt.getLeg1().getB() / parameters.getSnref()  / 2.0 : t3wt.getLeg1().getB();
+
+            //Leg2 pu values in [p.u.] (base Snom2, nomiU0)
+            double r2pu = t3wt.getLeg2().getR() * sNom2 / nomiU0 / nomiU0; //pu in [sNom2, nomiU0]
+            double x2pu = t3wt.getLeg2().getX() * sNom2 / nomiU0 / nomiU0; //pu in [sNom2, nomiU0]
+            double g2 = config.isSpecificCompatibility() ? t3wt.getLeg2().getG() / parameters.getSnref() / 2.0 : t3wt.getLeg2().getG();  //...semi shunt conductance [p.u.](Base Snom2)
+            double b2 = config.isSpecificCompatibility() ? t3wt.getLeg2().getB() / parameters.getSnref()  / 2.0 : t3wt.getLeg2().getB();  //...semi shunt susceptance [p.u.](Base Snom2)
+
+            //Leg3 pu values in [p.u.] (base Snom3, nomiU0)
+            double r3 = t3wt.getLeg3().getR(); // in Ohms
+            double x3 = t3wt.getLeg3().getX(); // in Ohms
+            double g3 = config.isSpecificCompatibility() ? t3wt.getLeg3().getG() / parameters.getSnref() / 2.0 : t3wt.getLeg3().getG(); // in S
+            double b3 = config.isSpecificCompatibility() ? t3wt.getLeg3().getB() / parameters.getSnref()  / 2.0 : t3wt.getLeg3().getB(); //in S
+
+            //We make the following approximation supposing that a PowSyBl 3 windings transformer can be represented as follow with a shift of shunt elements y1, y2, y3 to y0:
+            //                                      |---(r2+jx2)---(rho2*e(j*alpha2))---2
+            //                                      |
+            //  1---(rho1*e(j*alpha1))---(r1+jx1)---0
+            //                                      |
+            //                                      |---(rho3*e(j*alpha3))--+--(r3eq+j*x3eq)---3  with  r3eq = r3 / rho3 / rho3
+            //                                                              |
+            //                                                              y0 = rho3 * rho3 * [y1 + y2 +y3]
+            //                                                              |
+            //                                                             ///
+
+            //************
+            // yo and z3eq
+            //************
+            //z3eq is computed moving z3 from left to right of the powsybl leg3 transfo ratio z3eq = z3 / rho3 / rho3 (in Ohms)
+            //we use the current rho3 in order to keep consistant LF results
+            double rho3 = nomiU0 / nomiU3;
+            RatioTapChanger rtcL3 = t3wt.getLeg3().getRatioTapChanger();
+            PhaseTapChanger ptcL3 = t3wt.getLeg3().getPhaseTapChanger();
+            if (rtcL3 != null) {
+                //test
+                rho3 = rho3 * rtcL3.getCurrentStep().getRho();
+
+                //System.out.println(" Leg 3 has ratio " + rtcL3.getCurrentStep().getRho());
+            }
+            if (ptcL3 != null) {
+                rho3 = rho3 * ptcL3.getCurrentStep().getRho();
+                //System.out.println(" Leg 3 has phase ratio " + ptcL3.getCurrentStep().getRho());
+            }
+
+            double r3eq = r3 / rho3 / rho3; // in Ohms on 3-end side
+            double x3eq = x3 / rho3 / rho3; // in Ohms on 3-end side
+            double r3eqpu = r3eq * sNom3 / nomiU3 / nomiU3; // in pu [Snom3, Vnom3]
+            double x3eqpu = x3eq * sNom3 / nomiU3 / nomiU3;
+
+            //**********
+            //Pcu
+            //**********
+            //First compute the Pcu of each leg i = PcuTi
+            double pCuT1 = 100 * r1pu; // pcuT1 = copper losses in % of Snom1]
+            double pCuT2 = 100 * r2pu;
+            double pCuT3 = 100 * r3eqpu;
+
+            double pCu12 = Math.min(sNom1, sNom2) * (pCuT1 / sNom1 + pCuT2 / sNom2);
+            double pCu13 = Math.min(sNom1, sNom3) * (pCuT1 / sNom1 + pCuT3 / sNom3);
+            double pCu23 = Math.min(sNom2, sNom3) * (pCuT2 / sNom2 + pCuT3 / sNom3);
+
+            //********
+            //PFe
+            //********
+            // In Eurostag modelling, Pfe in legs 1 and 2 are 0, compute Pfe of leg 3 = pFeT3 in [% of Snom3]
+            //y0 is obtained moving and summing all y1, y2 and y3 shunt elements on the other side of the leg3 ratio
+            double g0 = rho3 * rho3 * (g1 + g2 + g3);
+            double b0 = rho3 * rho3 * (b1 + b2 + b3);
+            double g0plus = Math.max(0, g0);
+            double b0minus = Math.min(0, b0);
+            double g0pluspu = g0plus * nomiU3 * nomiU3 / sNom3; // pu [Snom3, Vnom3]
+            double b0minuspu = b0minus * nomiU3 * nomiU3 / sNom3; // pu [Snom3, Vnom3]
+
+            // pFe = PFeT3 * Snom3 / min(Snom1, Snom2, Snom3)
+            double pFe = 100 * g0pluspu * sNom3 / Math.min(Math.min(sNom2, sNom3), sNom1);
+
+            //********
+            // Cmagn
+            //********
+            //i0T1 = 0 , i0T2 = 0, ioT3 = i0
+            double i0T3 = 100 * Math.hypot(b0minuspu, g0pluspu); //100 * parameters.getSnref() / sNom3 * Math.hypot(b0minus, g0pluspu);
+            double io = i0T3 * sNom3 / Math.min(Math.min(sNom2, sNom3), sNom1); // is expressed in % pu of the smallest Snom base
+
+            //*******
+            // Ucc
+            //*******
+            // Ucc values depend on the taps of the transformer, simplification hypotheses are needed since EUROSTAG modelling has only one tap changer for all three legs
+            // whereas PowSyBl modelling can have both tap ratio and tap phase per leg. The EUROSTAG ratio can only regulate voltage, therefore we will only look regulating ratio taps
+            // we settle the following priority order:
+            // 1- a regulating ratio tap
+            // 2- one fixed tap if nothing is regulating
+            RatioTapChanger rtcL1 = t3wt.getLeg1().getRatioTapChanger();
+            PhaseTapChanger ptcL1 = t3wt.getLeg1().getPhaseTapChanger();
+            RatioTapChanger rtcL2 = t3wt.getLeg2().getRatioTapChanger();
+            PhaseTapChanger ptcL2 = t3wt.getLeg2().getPhaseTapChanger();
+
+            EsgThreeWindingTransformer.RegulatingMode regulatingMode = EsgThreeWindingTransformer.RegulatingMode.NOT_REGULATING;
+            Esg8charName zbusr = null; //...regulated node name (if empty, no tap change)
+            double voltr = Double.NaN;
+            int ktpnom = 1; //...nominal tap number is not available in IIDM. Take th median plot by default
+            int ktap8 = 1;  //...initial tap position (tap number) (Ex: 10)
+            List<EsgThreeWindingTransformer.Tap> taps = new ArrayList<>();
+
+            int rtci = 0;
+            int nbTaps = 1; //there is at least one tap
+            if (rtcL1 != null && rtcL1.isRegulating()) {
+                rtci = 1;
+                nbTaps = rtcL1.getStepCount();
+                ConnectionBus regulatingBus = ConnectionBus.fromTerminal(rtcL1.getRegulationTerminal(), config, null);
+                if (regulatingBus.getId() != null) {
+                    regulatingMode = EsgThreeWindingTransformer.RegulatingMode.VOLTAGE;
+                    zbusr = new Esg8charName(dictionary.getEsgId(regulatingBus.getId()));
+                    voltr = rtcL1.getTargetV();
+                    ktap8 = rtcL1.getTapPosition() - rtcL1.getLowTapPosition() + 1;
+                    ktpnom = rtcL1.getStepCount() / 2 + 1;
+                }
+            } else if (rtcL2 != null && rtcL2.isRegulating()) {
+                rtci = 2;
+                nbTaps = rtcL2.getStepCount();
+                ConnectionBus regulatingBus = ConnectionBus.fromTerminal(rtcL2.getRegulationTerminal(), config, null);
+                if (regulatingBus.getId() != null) {
+                    regulatingMode = EsgThreeWindingTransformer.RegulatingMode.VOLTAGE;
+                    zbusr = new Esg8charName(dictionary.getEsgId(regulatingBus.getId()));
+                    voltr = rtcL2.getTargetV();
+                    ktap8 = rtcL2.getTapPosition() - rtcL2.getLowTapPosition() + 1;
+                    ktpnom = rtcL2.getStepCount() / 2 + 1;
+                }
+            } else if (rtcL3 != null && rtcL3.isRegulating()) {
+                rtci = 3;
+                nbTaps = rtcL3.getStepCount();
+                ConnectionBus regulatingBus = ConnectionBus.fromTerminal(rtcL3.getRegulationTerminal(), config, null);
+                if (regulatingBus.getId() != null) {
+                    regulatingMode = EsgThreeWindingTransformer.RegulatingMode.VOLTAGE;
+                    zbusr = new Esg8charName(dictionary.getEsgId(regulatingBus.getId()));
+                    voltr = rtcL3.getTargetV();
+                    ktap8 = rtcL3.getTapPosition() - rtcL3.getLowTapPosition() + 1;
+                    ktpnom = rtcL3.getStepCount() / 2 + 1;
+                }
+            }
+
+            double[] ucc12 = new double[nbTaps];
+            double[] ucc13 = new double[nbTaps];
+            double[] ucc23 = new double[nbTaps];
+
+            double[] uno1 = new double[nbTaps];
+            double[] uno2 = new double[nbTaps];
+            double[] uno3 = new double[nbTaps];
+
+            for (int i = 0; i < nbTaps; i++) {
+
+                uno1[i] = nomiU1;
+                uno2[i] = nomiU2;
+                uno3[i] = nomiU3;
+
+                //initialization with the current tap
+                if (ptcL1 != null) {
+                    uno1[i] = uno1[i] / ptcL1.getCurrentStep().getRho();
+                }
+                if (ptcL2 != null) {
+                    uno2[i] = uno2[i] / ptcL2.getCurrentStep().getRho();
+                }
+                if (ptcL3 != null) {
+                    uno3[i] = uno3[i] / ptcL3.getCurrentStep().getRho();
+                }
+
+                double uccT1 = 100 * Math.hypot(r1pu, x1pu);
+                if (x1pu < 0) {
+                    uccT1 = x1pu * 100;
+                }
+                double uccT2 = 100 * Math.hypot(r2pu, x2pu);
+                if (x2pu < 0) {
+                    uccT2 = x2pu * 100;
+                }
+                double uccT3 = 100 * Math.hypot(r3eqpu, x3eqpu);
+                if (x3eqpu < 0) {
+                    uccT3 = x3eqpu * 100;
+                }
+                if (rtci == 1) {
+                    double r1putap = getValue(r1pu, rtcL1.getStep(rtcL1.getLowTapPosition() + i).getR(), 0);
+                    double x1putap = getValue(x1pu, rtcL1.getStep(rtcL1.getLowTapPosition() + i).getX(), 0);
+                    uccT1 = 100 * Math.hypot(r1putap, x1putap);
+                    uno1[i] = uno1[i] / rtcL1.getStep(rtcL1.getLowTapPosition() + i).getRho();
+                    if (rtcL2 != null) {
+                        uno2[i] = uno2[i] / rtcL2.getCurrentStep().getRho();
+                    }
+                    if (rtcL3 != null) {
+                        uno3[i] = uno3[i] / rtcL3.getCurrentStep().getRho();
+                    }
+                } else if (rtci == 2) {
+                    double r2putap = getValue(r2pu, rtcL2.getStep(rtcL2.getLowTapPosition() + i).getR(), 0);
+                    double x2putap = getValue(x2pu, rtcL2.getStep(rtcL2.getLowTapPosition() + i).getX(), 0);
+                    uccT2 = 100 * Math.hypot(r2putap, x2putap);
+                    if (rtcL1 != null) {
+                        uno1[i] = uno1[i] / rtcL1.getCurrentStep().getRho();
+                    }
+                    if (rtcL3 != null) {
+                        uno3[i] = uno3[i] / rtcL3.getCurrentStep().getRho();
+                    }
+                } else if (rtci == 3) {
+                    double r3putap = getValue(r3eqpu, rtcL3.getStep(rtcL3.getLowTapPosition() + i).getR(), 0);
+                    double x3putap = getValue(x3eqpu, rtcL3.getStep(rtcL3.getLowTapPosition() + i).getX(), 0);
+                    uccT3 = 100 * Math.hypot(r3putap, x3putap);
+                    if (rtcL1 != null) {
+                        uno1[i] = uno1[i] / rtcL1.getCurrentStep().getRho();
+                    }
+                    if (rtcL2 != null) {
+                        uno2[i] = uno2[i] / rtcL2.getCurrentStep().getRho();
+                    }
+                } else {
+                    if (rtcL1 != null) {
+                        uno1[i] = uno1[i] / rtcL1.getCurrentStep().getRho();
+                    }
+                    if (rtcL2 != null) {
+                        uno2[i] = uno2[i] / rtcL2.getCurrentStep().getRho();
+                    }
+                    if (rtcL3 != null) {
+                        uno3[i] = uno3[i] / rtcL3.getCurrentStep().getRho();
+                    }
+                }
+
+                ucc12[i] = Math.min(sNom1, sNom2) * (uccT1 / sNom1 + uccT2 / sNom2);
+                ucc13[i] = Math.min(sNom1, sNom3) * (uccT1 / sNom1 + uccT3 / sNom3);
+                ucc23[i] = Math.min(sNom2, sNom3) * (uccT2 / sNom2 + uccT3 / sNom3);
+
+                //TODO: phase shift per winding
+                //by default it is 0
+
+                if (nbTaps == 1) {
+                    //create at least 2 EUROSTAG taps
+                    taps.add(new EsgThreeWindingTransformer.Tap(1, 0., 0., 0., uno1[i], uno2[i], uno3[i], ucc12[i], ucc13[i], ucc23[i]));
+                    taps.add(new EsgThreeWindingTransformer.Tap(2, 0., 0., 0., uno1[i], uno2[i], uno3[i], ucc12[i], ucc13[i], ucc23[i]));
+                } else {
+                    //create one tap per i
+                    taps.add(new EsgThreeWindingTransformer.Tap(i + 1, 0., 0., 0., uno1[i], uno2[i], uno3[i], ucc12[i], ucc13[i], ucc23[i]));
+                }
+
+            }
+
+            EsgThreeWindingTransformer.EsgT3WConnectionStatus status = EsgThreeWindingTransformer.EsgT3WConnectionStatus.CLOSED_AT_ALL_SIDES; //TODO : check connections
+            double esat = 1.0;
+
+            //add T3E to the network
+            EsgThreeWindingTransformer esgT3WTransfo = new EsgThreeWindingTransformer(
+                    new EsgThreeWindingTransformer.EsgT3WName(new Esg8charName(dictionary.getEsgId(t3wt.getId())),
+                            new Esg8charName(dictionary.getEsgId(bus1.getId())),
+                            new Esg8charName(dictionary.getEsgId(bus2.getId())),
+                            new Esg8charName(dictionary.getEsgId(bus3.getId()))),
+                    status,
+                    io,
+                    sNom1,
+                    sNom2,
+                    sNom3,
+                    pCu12,
+                    pCu13,
+                    pCu23,
+                    pFe,
+                    esat,
+                    ktpnom,
+                    ktap8,
+                    zbusr,
+                    voltr,
+                    regulatingMode);
+
+            //***************************
+            // *** TAP TRANSFORMATION *** (Record 3)
+            //***************************
+            esgT3WTransfo.getTaps().addAll(taps);
+
+            esgNetwork.addThreeWindingTransformer(esgT3WTransfo);
+
         }
     }
 

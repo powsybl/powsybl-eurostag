@@ -293,6 +293,89 @@ public class EsgWriter {
         }
     }
 
+    private static char toChar(EsgThreeWindingTransformer.RegulatingMode mode) {
+        switch (mode) {
+            case NOT_REGULATING:
+                return 'N';
+            case VOLTAGE:
+                return 'V';
+            default:
+                throw new IllegalArgumentException("Invalid regulating mode: " + mode);
+        }
+    }
+
+    private static void writeThreeWindingTransformer(EsgThreeWindingTransformer t3w, RecordWriter recordWriter) throws IOException {
+        recordWriter.addValue("44", 1, 2);
+        recordWriter.addValue(t3w.getName().gett3wName().toString(), 3, 10);
+        recordWriter.addValue(toChar(t3w.getStatus()), 11);
+        recordWriter.addValue(t3w.getName().getNode1Name().toString(), 12, 19);
+        recordWriter.addValue(t3w.getName().getNode2Name().toString(), 21, 28);
+        recordWriter.addValue(t3w.getName().getNode3Name().toString(), 30, 37);
+        recordWriter.addValue(t3w.getRate1(), 39, 46);
+        recordWriter.addValue(t3w.getRate2(), 48, 55);
+        recordWriter.addValue(t3w.getRate3(), 57, 64);
+        recordWriter.addValue(t3w.getPcu12(), 66, 73);
+        recordWriter.addValue(t3w.getPcu13(), 75, 82);
+        recordWriter.addValue(t3w.getPcu23(), 84, 91);
+
+        recordWriter.addValue(t3w.getPfer(), 93, 100);
+        recordWriter.addValue(t3w.getCmagn(), 102, 109);
+        recordWriter.addValue(t3w.getEsat(), 111, 118);
+        recordWriter.addValue(0.f, 119, 126);   //...Free numeric attribute 1
+        recordWriter.addValue(0.f, 137, 144);   //...Free numeric attribute 2
+        recordWriter.addNewLine();
+
+        // second line record
+        recordWriter.addValue("44", 1, 2);
+        recordWriter.addValue(t3w.getKtpnom(), 22, 25);
+        recordWriter.addValue(t3w.getKtap8(), 27, 30);
+        recordWriter.addValue(t3w.getZbusr() != null ? t3w.getZbusr().toString() : "", 32, 39);
+        recordWriter.addValue(t3w.getVoltr(), 41, 48);
+        recordWriter.addValue(0.f, 50, 57);
+        recordWriter.addValue(0.f, 59, 66);
+        recordWriter.addValue(toChar(t3w.getXregtr()), 68);
+        recordWriter.addNewLine();
+
+        // tap records
+        for (EsgThreeWindingTransformer.Tap tap : t3w.getTaps()) {
+            recordWriter.addValue("44", 1, 2);
+            recordWriter.addValue(tap.getIplo(), 22, 25);
+            recordWriter.addValue(tap.getUno1(), 27, 34);
+            recordWriter.addValue(tap.getUno2(), 36, 43);
+            recordWriter.addValue(tap.getUno3(), 45, 52);
+            recordWriter.addValue(tap.getUcc12(), 54, 61);
+            recordWriter.addValue(tap.getUcc13(), 63, 70);
+            recordWriter.addValue(tap.getUcc23(), 72, 79);
+            recordWriter.addValue(tap.getDephas1(), 81, 88);
+            recordWriter.addValue(tap.getDephas2(), 90, 97);
+            recordWriter.addValue(tap.getDephas3(), 99, 106);
+            recordWriter.addNewLine();
+        }
+    }
+
+    private static char toChar(EsgThreeWindingTransformer.EsgT3WConnectionStatus status) {
+        switch (status) {
+            case CLOSED_AT_ALL_SIDES:
+                return ' ';
+            case OPEN_AT_1_END_SIDE:
+                return '1';
+            case OPEN_AT_2_END_SIDE:
+                return '2';
+            case OPEN_AT_3_END_SIDE:
+                return '3';
+            case OPEN_AT_12_END_SIDES:
+                return '4';
+            case OPEN_AT_13_END_SIDES:
+                return '5';
+            case OPEN_AT_23_END_SIDES:
+                return '6';
+            case OPEN_AT_ALL_SIDES:
+                return '-';
+            default:
+                throw new IllegalArgumentException("Invalid connection status: " + status);
+        }
+    }
+
     private static void writeLoad(EsgLoad load, RecordWriter recordWriter) throws IOException {
         recordWriter.addValue("CH", 1, 2);
         recordWriter.addValue(load.getZnamlo().toString(), 4, 11);
@@ -538,6 +621,13 @@ public class EsgWriter {
         if (!network.getDetailedTwoWindingTransformers().isEmpty()) {
             for (EsgDetailedTwoWindingTransformer transformer : network.getDetailedTwoWindingTransformers()) {
                 writeDetailedTwoWindingTransformer(transformer, recordWriter);
+            }
+            recordWriter.addNewLine();
+        }
+
+        if (!network.getThreeWindingTransformers().isEmpty()) {
+            for (EsgThreeWindingTransformer tfo3w : network.getThreeWindingTransformers()) {
+                writeThreeWindingTransformer(tfo3w, recordWriter);
             }
             recordWriter.addNewLine();
         }

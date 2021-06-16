@@ -9,10 +9,7 @@ package com.powsybl.eurostag.converter;
 
 import com.google.common.io.CharStreams;
 import com.powsybl.iidm.network.*;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
-import com.powsybl.iidm.network.test.FourSubstationsNodeBreakerFactory;
-import com.powsybl.iidm.network.test.HvdcTestNetwork;
-import com.powsybl.iidm.network.test.SvcTestCaseFactory;
+import com.powsybl.iidm.network.test.*;
 import com.powsybl.eurostag.model.EsgGeneralParameters;
 import com.powsybl.eurostag.model.EsgSpecialParameters;
 import org.joda.time.LocalDate;
@@ -74,6 +71,13 @@ public class EurostagEchExportTest {
         network.getLccConverterStation("LCC2").remove();
 
         test(network, "/four-substations.ech", LocalDate.parse("2020-01-02"), null);
+    }
+
+    @Test
+    public void testThreeWindinfsTfos() throws IOException {
+        Network network = ThreeWindingsTransformerNetworkFactory.create();
+
+        test(network, "/three-winding.ech", LocalDate.parse("2020-01-02"), null);
     }
 
     @Test
