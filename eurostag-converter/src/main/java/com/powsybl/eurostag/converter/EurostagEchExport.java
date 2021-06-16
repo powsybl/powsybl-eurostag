@@ -618,7 +618,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             double g2 = config.isSpecificCompatibility() ? t3wt.getLeg2().getG() / parameters.getSnref() / 2.0 : t3wt.getLeg2().getG();  //...semi shunt conductance [p.u.](Base Snom2)
             double b2 = config.isSpecificCompatibility() ? t3wt.getLeg2().getB() / parameters.getSnref()  / 2.0 : t3wt.getLeg2().getB();  //...semi shunt susceptance [p.u.](Base Snom2)
 
-            //Leg3 pu values in [p.u.] (base Snom3, nomiU0)
+            //Leg3 values
             double r3 = t3wt.getLeg3().getR(); // in Ohms
             double x3 = t3wt.getLeg3().getX(); // in Ohms
             double g3 = config.isSpecificCompatibility() ? t3wt.getLeg3().getG() / parameters.getSnref() / 2.0 : t3wt.getLeg3().getG(); // in S
@@ -644,14 +644,10 @@ public class EurostagEchExport implements EurostagEchExporter {
             RatioTapChanger rtcL3 = t3wt.getLeg3().getRatioTapChanger();
             PhaseTapChanger ptcL3 = t3wt.getLeg3().getPhaseTapChanger();
             if (rtcL3 != null) {
-                //test
                 rho3 = rho3 * rtcL3.getCurrentStep().getRho();
-
-                //System.out.println(" Leg 3 has ratio " + rtcL3.getCurrentStep().getRho());
             }
             if (ptcL3 != null) {
                 rho3 = rho3 * ptcL3.getCurrentStep().getRho();
-                //System.out.println(" Leg 3 has phase ratio " + ptcL3.getCurrentStep().getRho());
             }
 
             double r3eq = r3 / rho3 / rho3; // in Ohms on 3-end side
@@ -663,7 +659,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             //Pcu
             //**********
             //First compute the Pcu of each leg i = PcuTi
-            double pCuT1 = 100 * r1pu; // pcuT1 = copper losses in % of Snom1]
+            double pCuT1 = 100 * r1pu; // pcuT1 = copper losses in [% of Snom1]
             double pCuT2 = 100 * r2pu;
             double pCuT3 = 100 * r3eqpu;
 
@@ -690,7 +686,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             // Cmagn
             //********
             //i0T1 = 0 , i0T2 = 0, ioT3 = i0
-            double i0T3 = 100 * Math.hypot(b0minuspu, g0pluspu); //100 * parameters.getSnref() / sNom3 * Math.hypot(b0minus, g0pluspu);
+            double i0T3 = 100 * Math.hypot(b0minuspu, g0pluspu);
             double io = i0T3 * sNom3 / Math.min(Math.min(sNom2, sNom3), sNom1); // is expressed in % pu of the smallest Snom base
 
             //*******
