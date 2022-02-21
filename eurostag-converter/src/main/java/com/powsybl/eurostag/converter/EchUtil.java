@@ -194,6 +194,12 @@ public final class EchUtil {
                 && (ConnectedComponents.getCcNum(EchUtil.getBus(branch.getTerminal2(), noswitch)) == ComponentConstants.MAIN_NUM);
     }
 
+    public static boolean isInMainCc(ThreeWindingsTransformer t3wt, boolean noswitch) {
+        return ConnectedComponents.getCcNum(EchUtil.getBus(t3wt.getLeg1().getTerminal(), noswitch)) == ComponentConstants.MAIN_NUM
+                && ConnectedComponents.getCcNum(EchUtil.getBus(t3wt.getLeg2().getTerminal(), noswitch)) == ComponentConstants.MAIN_NUM
+                && ConnectedComponents.getCcNum(EchUtil.getBus(t3wt.getLeg3().getTerminal(), noswitch)) == ComponentConstants.MAIN_NUM;
+    }
+
     /**
      * given an iIDM HVDC line , returns its DC voltage to be used with Eurostag
      * Multiplying  the line's nominalV by 2 corresponds to the fact that iIDM refers to the cable-ground voltage

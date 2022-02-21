@@ -15,7 +15,7 @@
     <parent>
         <groupId>com.powsybl</groupId>
         <artifactId>powsybl-parent</artifactId>
-        <version>4</version>
+        <version>7</version>
         <relativePath/>
     </parent>
 
@@ -60,10 +60,10 @@
         <jimfs.version>1.1</jimfs.version>
         <jodatime.version>2.9.7</jodatime.version>
         <junit.version>4.13.1</junit.version>
-        <mokito.version>1.10.19</mokito.version>
+        <mockito.version>3.3.3</mockito.version>
         <slf4j.version>1.7.22</slf4j.version>
 
-        <powsyblcore.version>4.0.1</powsyblcore.version>
+        <powsyblcore.version>4.6.1</powsyblcore.version>
     </properties>
 
     <dependencyManagement>
@@ -140,14 +140,15 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>${mokito.version}</version>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

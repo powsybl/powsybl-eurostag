@@ -123,17 +123,12 @@ public final class EurostagDictionary {
                     parallelIndexes.getParallelIndex(twt.getId())).toString());
         }
 
-        // TODO(mathbagu): Add support for Three windings transformers
-        /*if (network.getThreeWindingsTransformerCount() > 0) {
-            throw new UnsupportedOperationException("Three windings transformers are not supported yet");
-        }*/
         for (ThreeWindingsTransformer t3wt : Identifiables.sort(network.getThreeWindingsTransformers())) {
             // skip transformers not in the main connected component
-            //TODO
-            /*if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(twt, config.isNoSwitch())) {
-                LOGGER.trace("two windings transformer not mapped, not in main component: {}", twt.getId());
+            if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(t3wt, config.isNoSwitch())) {
+                LOGGER.trace("three windings transformer not mapped, not in main component: {}", t3wt.getId());
                 continue;
-            }*/
+            }
             ConnectionBus bus1 = ConnectionBus.fromTerminal(t3wt.getLeg1().getTerminal(), config, fakeNodes);
             ConnectionBus bus2 = ConnectionBus.fromTerminal(t3wt.getLeg2().getTerminal(), config, fakeNodes);
             ConnectionBus bus3 = ConnectionBus.fromTerminal(t3wt.getLeg3().getTerminal(), config, fakeNodes);

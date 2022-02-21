@@ -41,6 +41,11 @@ public class EurostagEchExport implements EurostagEchExporter {
      */
     static final float B_EPSILON = 0.000001f;
 
+    /**
+     * IIDM gives no rate value. we take rate = 100 MVA But we have to find the corresponding pcu, pfer ...
+     */
+    private static final float RATE = 100.f;
+
     // FIXME(mathbagu): probably deprecated since Boundary object exists
     private static final String XNODE_V_PROPERTY = "xnode_v";
     private static final String XNODE_ANGLE_PROPERTY = "xnode_angle";
@@ -94,7 +99,7 @@ public class EurostagEchExport implements EurostagEchExporter {
     }
 
     private EsgNode createNode(String busId, VoltageLevel vl, double v, double angle, boolean slackBus) {
-        String countryCode = vl.getSubstation().getCountry().map(Country::name).orElse(EchUtil.FAKE_AREA);
+        String countryCode = vl.getSubstation().flatMap(Substation::getCountry).map(Country::name).orElse(EchUtil.FAKE_AREA);
         return createNode(busId, countryCode, vl.getNominalV(), v, angle, slackBus);
     }
 
@@ -422,7 +427,6 @@ public class EurostagEchExport implements EurostagEchExporter {
             EsgBranchConnectionStatus status = getStatus(bus1, bus2);
 
             //...IIDM gives no rate value. we take rate = 100 MVA But we have to find the corresponding pcu, pfer ...
-            float rate = 100.f;
 
             //**************************
             //*** LOSSES COMPUTATION *** (Record 1)
@@ -438,10 +442,10 @@ public class EurostagEchExport implements EurostagEchExporter {
             double bpu2minus = Math.min(0, bpu2);
 
             //...changing base snref -> base rate to compute losses
-            double pcu = rpu2 * rate * 100.0 / parameters.getSnref();                   //...base rate (100F -> %)
-            double pfer = 10000.0 * (gpu2plus / rate) * (parameters.getSnref() / 100.0);  //...base rate
+            double pcu = rpu2 * RATE * 100.0 / parameters.getSnref();                   //...base rate (100F -> %)
+            double pfer = 10000.0 * (gpu2plus / RATE) * (parameters.getSnref() / 100.0);  //...base rate
             double modgb = Math.sqrt(Math.pow(gpu2plus, 2) + Math.pow(bpu2minus, 2.0));
-            double cmagn = 10000.0 * (modgb / rate) * (parameters.getSnref() / 100.0);    //...magnetizing current [% base rate]
+            double cmagn = 10000.0 * (modgb / RATE) * (parameters.getSnref() / 100.0);    //...magnetizing current [% base rate]
             double esat = 1.0;
 
             //***************************
@@ -473,7 +477,7 @@ public class EurostagEchExport implements EurostagEchExporter {
                 ktpnom = rtc.getStepCount() / 2 + 1;
                 for (int p = rtc.getLowTapPosition(); p <= rtc.getHighTapPosition(); p++) {
                     int iplo = p - rtc.getLowTapPosition() + 1;
-                    taps.add(createTap(twt, iplo, getRtcRho1(twt, p), getRtcR(twt, p), getRtcX(twt, p), 0.0, rate, parameters));
+                    taps.add(createTap(twt, iplo, getRtcRho1(twt, p), getRtcR(twt, p), getRtcX(twt, p), 0.0, RATE, parameters));
                 }
 
             } else if (ptc != null || rtc != null) {
@@ -497,10 +501,10 @@ public class EurostagEchExport implements EurostagEchExporter {
                 ktpnom = ptc.getStepCount() / 2 + 1;
                 for (int p = ptc.getLowTapPosition(); p <= ptc.getHighTapPosition(); p++) {
                     int iplo = p - ptc.getLowTapPosition() + 1;
-                    taps.add(createTap(twt, iplo, getPtcRho1(twt, p), getPtcR(twt, p), getPtcX(twt, p), ptc.getStep(p).getAlpha(), rate, parameters));
+                    taps.add(createTap(twt, iplo, getPtcRho1(twt, p), getPtcR(twt, p), getPtcX(twt, p), ptc.getStep(p).getAlpha(), RATE, parameters));
                 }
             } else if (rtc == null && ptc == null) {
-                taps.add(createTap(twt, 1, twt.getRatedU2() / twt.getRatedU1(), twt.getR(), twt.getX(), 0f, rate, parameters));
+                taps.add(createTap(twt, 1, twt.getRatedU2() / twt.getRatedU1(), twt.getR(), twt.getX(), 0f, RATE, parameters));
             }
 
             // trick to handle the fact that Eurostag model allows only the impedance to change and not the resistance.
@@ -509,16 +513,16 @@ public class EurostagEchExport implements EurostagEchExporter {
             if ((ptc != null) || (rtc != null)) {
                 double tapAdjustedR = getR(twt);
                 double rpu2Adjusted = (tapAdjustedR * parameters.getSnref()) / nomiU2 / nomiU2;
-                pcu = rpu2Adjusted * rate * 100.0 / parameters.getSnref();
+                pcu = rpu2Adjusted * RATE * 100.0 / parameters.getSnref();
 
                 double tapAdjustedG = Math.max(getG1(twt), 0);
                 double gpu2Adjusted = (tapAdjustedG / parameters.getSnref()) * nomiU2 * nomiU2;
-                pfer = 10000.0 * (gpu2Adjusted / rate) * (parameters.getSnref() / 100.0);
+                pfer = 10000.0 * (gpu2Adjusted / RATE) * (parameters.getSnref() / 100.0);
 
                 double tapAdjustedB = Math.min(getB1(twt), 0);
                 double bpu2Adjusted = (tapAdjustedB / parameters.getSnref()) * nomiU2 * nomiU2;
                 modgb = Math.sqrt(Math.pow(gpu2Adjusted, 2) + Math.pow(bpu2Adjusted, 2));
-                cmagn = 10000.0 * (modgb / rate) * (parameters.getSnref() / 100.0);
+                cmagn = 10000.0 * (modgb / RATE) * (parameters.getSnref() / 100.0);
             }
 
             double pregmin = Double.NaN; //...?
@@ -541,7 +545,7 @@ public class EurostagEchExport implements EurostagEchExporter {
                             parallelIndexes.getParallelIndex(twt.getId())),
                     status,
                     cmagn,
-                    rate,
+                    RATE,
                     pcu,
                     pfer,
                     esat,
@@ -563,12 +567,10 @@ public class EurostagEchExport implements EurostagEchExporter {
         }
 
         for (ThreeWindingsTransformer t3wt : Identifiables.sort(network.getThreeWindingsTransformers())) {
-            //TODO: skip transformers not in the main connected component
-            /*
             if (config.isExportMainCCOnly() && !EchUtil.isInMainCc(t3wt, config.isNoSwitch())) {
-                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "TwoWindingsTransformer", t3wt.getId());
+                LOGGER.warn(SKIPPING_NOT_IN_MAIN_COMPONENT, "ThreeWindingsTransformer", t3wt.getId());
                 continue;
-            }*/
+            }
 
             ConnectionBus bus1 = ConnectionBus.fromTerminal(t3wt.getLeg1().getTerminal(), config, fakeNodes);
             ConnectionBus bus2 = ConnectionBus.fromTerminal(t3wt.getLeg2().getTerminal(), config, fakeNodes);
@@ -590,9 +592,6 @@ public class EurostagEchExport implements EurostagEchExporter {
             //TODO: Status
             //EsgBranchConnectionStatus status = getStatus(bus1, bus2);
 
-            //...IIDM gives no rate value. we take rate = 100 MVA But we have to find the corresponding pcu, pfer ...
-            float rate = 100.f;
-
             //**************************
             //*** LOSSES COMPUTATION *** (Record 1)
             //**************************
@@ -602,9 +601,9 @@ public class EurostagEchExport implements EurostagEchExporter {
             double nomiU3 = t3wt.getLeg3().getTerminal().getVoltageLevel().getNominalV();
             double nomiU0 = t3wt.getRatedU0(); // TODO : check OK
 
-            double sNom1 = rate;
-            double sNom2 = rate;
-            double sNom3 = rate;
+            double sNom1 = RATE;
+            double sNom2 = RATE;
+            double sNom3 = RATE;
 
             //Leg1 pu values in [p.u.] (base Snom1, nomiU0)
             double r1pu = t3wt.getLeg1().getR() * sNom1 / nomiU0 / nomiU0; //pu in [sNom1, nomiU0]
