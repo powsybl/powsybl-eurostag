@@ -132,12 +132,10 @@ public final class EurostagDictionary {
             ConnectionBus bus1 = ConnectionBus.fromTerminal(t3wt.getLeg1().getTerminal(), config, fakeNodes);
             ConnectionBus bus2 = ConnectionBus.fromTerminal(t3wt.getLeg2().getTerminal(), config, fakeNodes);
             ConnectionBus bus3 = ConnectionBus.fromTerminal(t3wt.getLeg3().getTerminal(), config, fakeNodes);
-            System.out.println("t3wt iidm id = " + t3wt.getId());
             dictionary.addIfNotExist(t3wt.getId(), new EsgThreeWindingTransformer.EsgT3WName(new Esg8charName("T3W"),
                     new Esg8charName(dictionary.getEsgId(bus1.getId())),
                     new Esg8charName(dictionary.getEsgId(bus2.getId())),
                     new Esg8charName(dictionary.getEsgId(bus3.getId()))).toString());
-            System.out.println("test");
         }
 
         return dictionary;
