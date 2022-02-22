@@ -76,6 +76,7 @@ public class EurostagEchExportTest {
     @Test
     public void testThreeWindinfsTfos() throws IOException {
         Network network = ThreeWindingsTransformerNetworkFactory.create();
+        network.getThreeWindingsTransformer("3WT").getLeg1().setR(0.17424D); //proposition of modification of R to get a converging load flow
 
         test(network, "/three-winding.ech", LocalDate.parse("2020-01-02"), null);
     }

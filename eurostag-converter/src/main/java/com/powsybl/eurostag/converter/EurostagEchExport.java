@@ -785,12 +785,12 @@ public class EurostagEchExport implements EurostagEchExporter {
                             case TWO:
                                 uccT2 = computeUccT(getValue(r2pu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0),
                                         getValue(x2pu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0));
-                                // uno2 = uno2 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
+                                uno2 = uno2 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
                                 break;
                             case THREE:
                                 uccT3 = computeUccT(getValue(r3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0),
                                         getValue(x3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0));
-                                // uno3 = uno3 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
+                                uno3 = uno3 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
                                 break;
                             default:
                                 throw new AssertionError("Unexpected side: " + side);
