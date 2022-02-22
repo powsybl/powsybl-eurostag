@@ -599,7 +599,7 @@ public class EurostagEchExport implements EurostagEchExporter {
             double nomiU1 = t3wt.getLeg1().getTerminal().getVoltageLevel().getNominalV();
             double nomiU2 = t3wt.getLeg2().getTerminal().getVoltageLevel().getNominalV();
             double nomiU3 = t3wt.getLeg3().getTerminal().getVoltageLevel().getNominalV();
-            double nomiU0 = t3wt.getRatedU0(); // TODO : check OK
+            double nomiU0 = t3wt.getRatedU0();
 
             double sNom1 = RATE;
             double sNom2 = RATE;
@@ -640,13 +640,13 @@ public class EurostagEchExport implements EurostagEchExporter {
             //z3eq is computed moving z3 from left to right of the powsybl leg3 transfo ratio z3eq = z3 / rho3 / rho3 (in Ohms)
             //we use the current rho3 in order to keep consistant LF results
             double rho3 = nomiU0 / nomiU3;
-            RatioTapChanger rtcL3 = t3wt.getLeg3().getRatioTapChanger();
-            PhaseTapChanger ptcL3 = t3wt.getLeg3().getPhaseTapChanger();
-            if (rtcL3 != null) {
-                rho3 = rho3 * rtcL3.getCurrentStep().getRho();
+            double rhoPtc3 = 1.0;
+            if (t3wt.getLeg3().getOptionalRatioTapChanger().isPresent()) {
+                rho3 = rho3 * t3wt.getLeg3().getRatioTapChanger().getCurrentStep().getRho();
             }
-            if (ptcL3 != null) {
-                rho3 = rho3 * ptcL3.getCurrentStep().getRho();
+            if (t3wt.getLeg3().getOptionalPhaseTapChanger().isPresent()) {
+                rhoPtc3 = t3wt.getLeg3().getPhaseTapChanger().getCurrentStep().getRho();
+                rho3 = rho3 * rhoPtc3;
             }
 
             double r3eq = r3 / rho3 / rho3; // in Ohms on 3-end side
@@ -696,9 +696,6 @@ public class EurostagEchExport implements EurostagEchExporter {
             // we settle the following priority order:
             // 1- a regulating ratio tap
             // 2- one fixed tap if nothing is regulating
-            PhaseTapChanger ptcL1 = t3wt.getLeg1().getPhaseTapChanger();
-            PhaseTapChanger ptcL2 = t3wt.getLeg2().getPhaseTapChanger();
-
             Map<ThreeWindingsTransformer.Side, RatioTapChanger> legWithFixedRtc = new HashMap<>();
             Map<ThreeWindingsTransformer.Side, RatioTapChanger> legWithRegulatingRtc = new HashMap<>();
             Optional<RatioTapChanger> rtc1 = t3wt.getLeg1().getOptionalRatioTapChanger();
@@ -709,6 +706,7 @@ public class EurostagEchExport implements EurostagEchExporter {
                     legWithFixedRtc.put(ThreeWindingsTransformer.Side.ONE, rtc1.get());
                 }
             }
+            double rhoPtc1 = t3wt.getLeg1().getOptionalPhaseTapChanger().isPresent() ? t3wt.getLeg1().getPhaseTapChanger().getCurrentStep().getRho() : 1.0;
             Optional<RatioTapChanger> rtc2 = t3wt.getLeg2().getOptionalRatioTapChanger();
             if (rtc2.isPresent()) {
                 if (rtc2.get().isRegulating()) {
@@ -717,6 +715,7 @@ public class EurostagEchExport implements EurostagEchExporter {
                     legWithFixedRtc.put(ThreeWindingsTransformer.Side.TWO, rtc2.get());
                 }
             }
+            double rhoPtc2 = t3wt.getLeg2().getOptionalPhaseTapChanger().isPresent() ? t3wt.getLeg2().getPhaseTapChanger().getCurrentStep().getRho() : 1.0;
             Optional<RatioTapChanger> rtc3 = t3wt.getLeg3().getOptionalRatioTapChanger();
             if (rtc3.isPresent()) {
                 if (rtc3.get().isRegulating()) {
@@ -766,50 +765,31 @@ public class EurostagEchExport implements EurostagEchExporter {
                 uno3 = nomiU3;
 
                 //initialization with the current tap
-                if (ptcL1 != null) {
-                    uno1 = uno1 / ptcL1.getCurrentStep().getRho();
-                }
-                if (ptcL2 != null) {
-                    uno2 = uno2 / ptcL2.getCurrentStep().getRho();
-                }
-                if (ptcL3 != null) {
-                    uno3 = uno3 / ptcL3.getCurrentStep().getRho();
-                }
+                uno1 = uno1 / rhoPtc1;
+                uno2 = uno2 / rhoPtc2;
+                uno3 = uno3 / rhoPtc3;
 
-                double uccT1 = 100 * Math.hypot(r1pu, x1pu);
-                if (x1pu < 0) {
-                    uccT1 = x1pu * 100;
-                }
-                double uccT2 = 100 * Math.hypot(r2pu, x2pu);
-                if (x2pu < 0) {
-                    uccT2 = x2pu * 100;
-                }
-                double uccT3 = 100 * Math.hypot(r3eqpu, x3eqpu);
-                if (x3eqpu < 0) {
-                    uccT3 = x3eqpu * 100;
-                }
+                double uccT1 = computeUccT(r1pu, x1pu);
+                double uccT2 = computeUccT(r2pu, x2pu);
+                double uccT3 = computeUccT(r3eqpu, x3eqpu);
+
                 for (ThreeWindingsTransformer.Side side : Arrays.asList(ThreeWindingsTransformer.Side.values())) {
                     if (legWithRegulatingRtc.containsKey(side)) {
                         RatioTapChanger rtc = legWithRegulatingRtc.get(side);
-                        double rputap;
-                        double xputap;
                         switch (side) {
                             case ONE:
-                                rputap = getValue(r1pu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0);
-                                xputap = getValue(x1pu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0);
-                                uccT1 = 100 * Math.hypot(rputap, xputap);
+                                uccT1 = computeUccT(getValue(r1pu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0),
+                                        getValue(x1pu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0));
                                 uno1 = uno1 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
                                 break;
                             case TWO:
-                                rputap = getValue(r2pu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0);
-                                xputap = getValue(x2pu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0);
-                                uccT2 = 100 * Math.hypot(rputap, xputap);
+                                uccT2 = computeUccT(getValue(r2pu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0),
+                                        getValue(x2pu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0));
                                 // uno2 = uno2 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
                                 break;
                             case THREE:
-                                rputap = getValue(r3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0);
-                                xputap = getValue(x3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0);
-                                uccT3 = 100 * Math.hypot(rputap, xputap);
+                                uccT3 = computeUccT(getValue(r3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getR(), 0),
+                                        getValue(x3eqpu, rtc.getStep(rtc.getLowTapPosition() + i).getX(), 0));
                                 // uno3 = uno3 / rtc.getStep(rtc.getLowTapPosition() + i).getRho();
                                 break;
                             default:
@@ -885,6 +865,14 @@ public class EurostagEchExport implements EurostagEchExporter {
 
             esgNetwork.addThreeWindingTransformer(esgT3WTransfo);
 
+        }
+    }
+
+    private double computeUccT(double rpu, double xpu) {
+        if (xpu < 0) {
+            return xpu * 100;
+        } else {
+            return 100 * Math.hypot(rpu, xpu);
         }
     }
 
